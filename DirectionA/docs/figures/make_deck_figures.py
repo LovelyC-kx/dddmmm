@@ -372,6 +372,6 @@ if __name__ == "__main__":
     fig_eda_missing()
     fig_eda_clues()
     fig_coverage()
-    fig_architecture()
+    # fig_architecture()  # superseded by make_architecture.py
     fig_datadriven_map()
     print("all deck figures rebuilt")
