@@ -180,7 +180,7 @@ tb(s, 0.9, 3.25, 12, 0.5, [{"runs": [
     {"text": "数据驱动的结构化事件链建模", "size": 16,
      "color": RGBColor(0x9D, 0xB0, 0xC4)}]}])
 cards = [("Data-driven", "3 EDA findings  →  3 new event attributes"),
-         ("Interpretable", "20×20 event-type causal graph with lags"),
+         ("Interpretable", "structured events + transparent tabular model"),
          ("Honest", "stratified + chronological dual reporting")]
 for i, (hd, bd) in enumerate(cards):
     cx = 0.9 + i * 3.95
@@ -430,39 +430,27 @@ tb(s, 6.95, 5.45, 5.6, 0.55, [{"lh": 1.1, "runs": [{"text":
     "Nodes are event types, not stocks — the graph transfers across companies.",
     "size": 10.5, "italic": True, "color": RGBColor(0xC9, 0xD6, 0xE3)}]}])
 
-# ============================================================ S13  GRAPH
-s = base("03  ·  METHOD — PHASE 2", "Interpretability Product — Event Chains")
-tb(s, 0.6, 1.4, 12, 0.4, [{"runs": [
-    {"text": "The learned graph is read as directed event chains with explicit "
-     "lags. Designed-for chains:", "size": 13, "color": INK}]}])
-chains = [("M1 Interest Rate", "C1 Earnings", "rate moves squeeze earnings"),
-          ("C1 Earnings", "K1 Analyst Rating", "surprises trigger rating revisions"),
-          ("C2 M&A", "K1 Analyst Rating", "deals re-rate the merged entity"),
-          ("M4 Monetary Signal", "M1 Interest Rate", "signaling precedes hikes")]
-for i, (a, b, why) in enumerate(chains):
-    y = 1.95 + i * 0.84
-    rect(s, 0.7, y, 3.4, 0.6, NAVY, rounded=True)
-    tb(s, 0.7, y + 0.13, 3.4, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
-        {"text": a, "size": 11.5, "bold": True, "color": WHITE}]}],
-       align=PP_ALIGN.CENTER)
-    tb(s, 4.15, y + 0.1, 0.7, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
-        {"text": "→", "size": 18, "bold": True, "color": ORANGE}]}],
-       align=PP_ALIGN.CENTER)
-    rect(s, 4.9, y, 3.4, 0.6, BLUE, rounded=True)
-    tb(s, 4.9, y + 0.13, 3.4, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
-        {"text": b, "size": 11.5, "bold": True, "color": WHITE}]}],
-       align=PP_ALIGN.CENTER)
-    tb(s, 8.5, y + 0.13, 4.2, 0.4, [{"runs": [
-        {"text": why, "size": 11, "italic": True, "color": GRAY}]}])
-rect(s, 0.6, 5.5, 12.15, 1.45, CREAM, rounded=True)
-tb(s, 0.9, 5.66, 11.5, 0.45, [{"runs": [
-    {"text": "Honesty note", "size": 12.5, "bold": True, "color": RED}]}])
-tb(s, 0.9, 6.04, 11.55, 0.85, [{"lh": 1.13, "runs": [{"text":
-    "Chains above are the structure the framework is designed to surface. The "
-    "final 20×20 matrix must be exported from the trained STACD model "
-    "(export_model_figures.py); A is directed predictive temporal dependence "
-    "under time-ordering + sparsity + DAG — not intervention-level causality.",
-    "size": 11, "color": INK}]}])
+# ============================================================ S13  GRAPH (honest)
+s = base("03  ·  METHOD — PHASE 2", "Phase 2 Result — The Causal Graph Did Not Learn")
+tb(s, 0.6, 1.35, 12, 0.4, [{"runs": [
+    {"text": "STACD trained 12 epochs on 9,527 real event sequences — a clear, "
+     "honestly-reported negative result:", "size": 12.5, "color": INK}]}])
+pic(s, "fig_causal_matrix.png", 1.95, 3.55, 7.6, x=0.5)
+rect(s, 8.3, 1.85, 4.5, 4.45, LIGHT, rounded=True)
+tb(s, 8.55, 2.0, 4.05, 0.4, [{"runs": [
+    {"text": "DIAGNOSED NEGATIVE RESULT", "size": 12, "bold": True, "color": RED}]}])
+bullets(s, 8.55, 2.45, 4.1, 3.8, [
+    "Trained A: mean 0.267, std 0.048 — identical to its initialization (0.269 / 0.048).",
+    "Across 12 epochs A barely moves (mean change 0.005 per entry).",
+    "STACD prediction head ≈ 0.5 (random) — almost no gradient reaches the graph.",
+    ("→ same weak forward signal as the chronological collapse", 1, True, NAVY)],
+    size=11)
+rect(s, 0.6, 6.4, 12.2, 0.72, CREAM, rounded=True)
+tb(s, 0.9, 6.54, 11.6, 0.5, [{"runs": [
+    {"text": "Honest takeaway:  ", "size": 11.5, "bold": True, "color": NAVY},
+    {"text": "end-to-end causal discovery is not identifiable on a low-signal "
+     "target — next step: estimate the graph from observed lagged co-occurrence.",
+     "size": 11.5, "color": INK}]}])
 
 # ============================================================ S14  PHASE 3
 s = base("03  ·  METHOD — PHASE 3", "Prediction Layer")
@@ -539,18 +527,18 @@ bullets(s, 7.25, 2.12, 5.35, 4.2, [
 # ============================================================ S18  DISCUSSION
 s = base("05  ·  DISCUSSION", "Limits, What We Learned, Future Work")
 cols = [("WHAT WE LEARNED", GREEN, [
-    "EDA-driven attribute design is the strongest interpretability lever.",
-    "Event-type graph captures intuitive chains (rate→earnings).",
+    "EDA-driven attribute design is the strongest, most defensible contribution.",
+    "Three negative results share one cause — the weak forward-time signal.",
     "Stratified-only reporting overstates real-world power."]),
         ("LIMITS", RED, [
-    "A is predictive temporal dependence, not intervention causality.",
-    "Neural-ODE propagation underperforms — low-SNR daily data, high-capacity "
+    "End-to-end causal discovery did not learn — graph stays at initialization.",
+    "Neural-ODE propagation overfits — low-SNR daily data, high-capacity "
     "continuous-time models fit noise.",
     "Single seed; 5% subset; 22 tickers limit regime coverage."]),
         ("FUTURE WORK", BLUE, [
-    "Multi-seed confidence intervals; MCC / IC metrics.",
-    "Rolling walk-forward validation as the default.",
-    "Train & export the real causal graph; LLM-assisted surprise."])]
+    "Event-type graph from lagged co-occurrence (no end-to-end gradient).",
+    "Multi-seed confidence intervals; rolling walk-forward validation.",
+    "LLM-assisted surprise extraction to lift its 6.6% coverage."])]
 for i, (hd, cl, items) in enumerate(cols):
     cx = 0.6 + i * 4.07
     rect(s, cx, 1.5, 3.85, 4.95, LIGHT, rounded=True)
