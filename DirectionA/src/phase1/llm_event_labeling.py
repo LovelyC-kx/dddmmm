@@ -38,9 +38,12 @@ from typing import Any
 import numpy as np
 
 
-# 在这里填写你的API Key
-API_KEY = "sk-qah34nlWeeuMB9OM6KWP47EeJFJhmlKqhQt2zUZs7F474uoV"
-API_URL = "https://www.fhl.mom/v1"
+# 在这里填写你的API Key，或通过 --api-keys / --api-key-file 传入（推荐）。
+# 注意：请勿将真实密钥提交到版本库。
+import os
+
+API_KEY = os.environ.get("LLM_API_KEY", "")
+API_URL = os.environ.get("LLM_API_URL", "https://www.fhl.mom/v1")
 
 EVENT_TYPE_SET = {
     "M1",
