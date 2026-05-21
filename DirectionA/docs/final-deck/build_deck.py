@@ -1,6 +1,6 @@
-"""Build the EventChain CS173 final-presentation deck (16:9).
+"""Build the CausalStock CS173 final-presentation deck (16:9).
 
-Rebuilds the deck from corrected content: EventChain naming, comparison +
+Rebuilds the deck from corrected content: CausalStock naming, comparison +
 data front-loaded, real ablation numbers, ODE demoted, honest causal-graph
 slide. Figures are pulled from ../figures (run make_deck_figures.py first).
 
@@ -97,7 +97,7 @@ def base(kicker, title):
     tb(s, 0.55, 0.33, 12.2, 0.62,
        [{"runs": [{"text": title, "size": 23, "bold": True, "color": WHITE}]}])
     tb(s, 0.55, 7.10, 9, 0.3,
-       [{"runs": [{"text": "EventChain  ·  CS173 Data Mining  ·  Team 2",
+       [{"runs": [{"text": "CausalStock  ·  CS173 Data Mining  ·  Team 2",
                    "size": 9, "color": GRAY}]}])
     tb(s, 12.1, 7.10, 0.8, 0.3,
        [{"runs": [{"text": str(PAGE[0]), "size": 9, "color": GRAY}]}],
@@ -172,7 +172,7 @@ tb(s, 0.9, 0.95, 12, 0.4, [{"runs": [
     {"text": "CS173  ·  DATA MINING  ·  FINAL PROJECT", "size": 13,
      "bold": True, "color": ORANGE}]}])
 tb(s, 0.86, 1.35, 12, 1.4, [{"runs": [
-    {"text": "EventChain", "size": 66, "bold": True, "color": WHITE}]}])
+    {"text": "CausalStock", "size": 66, "bold": True, "color": WHITE}]}])
 tb(s, 0.9, 2.45, 12, 0.6, [{"runs": [
     {"text": "Structured Event-Chain Modeling for News-Driven Stock Prediction",
      "size": 21, "color": RGBColor(0xC9, 0xD6, 0xE3)}]}])
@@ -260,7 +260,7 @@ tb(s, 0.6, 3.2, 12, 0.4, [{"runs": [
     {"text": "Two blind spots — and our response", "size": 14, "bold": True,
      "color": ORANGE}]}])
 table(s, 0.6, 3.6, 12.15, [
-    ["Baseline blind spot", "EventChain response"],
+    ["Baseline blind spot", "CausalStock response"],
     ["One vector per article hides event type, magnitude, affected entity",
      "Structured event:  (S, A, O, M)  +  impact profile"],
     ["Stock-level graph cannot say what kind of event drove a link",
@@ -269,14 +269,14 @@ table(s, 0.6, 3.6, 12.15, [
 rect(s, 0.6, 5.75, 12.15, 0.95, CREAM, rounded=True)
 tb(s, 0.95, 5.92, 11.5, 0.65, [{"lh": 1.12, "runs": [
     {"text": "Takeaway:  ", "size": 12.5, "bold": True, "color": NAVY},
-    {"text": "the baseline is strong but structure-blind — EventChain restores "
+    {"text": "the baseline is strong but structure-blind — CausalStock restores "
      "event structure and moves causality to the transferable event-type level.",
      "size": 12.5, "color": INK}]}])
 
 # ============================================================ S5  COMPARE
-s = base("01  ·  POSITIONING", "EventChain vs CausalStock — Every Choice Is Data-Justified")
+s = base("01  ·  POSITIONING", "Positioning — Ours vs the NeurIPS 2024 Baseline")
 table(s, 0.55, 1.45, 12.25, [
-    ["Dimension", "CausalStock (baseline)", "EventChain (ours)", "Data evidence"],
+    ["Dimension", "CausalStock (NeurIPS 2024)", "Ours", "Data evidence"],
     ["News representation", "Denoised dense embedding",
      "(S,A,O,M) + impact profile", "88% price / 77% numeric cues"],
     ["Causal graph nodes", "Stock-level  (22×22)",
@@ -292,7 +292,7 @@ table(s, 0.55, 1.45, 12.25, [
 rect(s, 0.55, 6.05, 12.25, 0.92, NAVY, rounded=True)
 tb(s, 0.9, 6.24, 11.6, 0.6, [{"runs": [
     {"text": "Core claim:  ", "size": 13, "bold": True, "color": ORANGE},
-    {"text": "every method choice in EventChain is justified by a specific, "
+    {"text": "every method choice in CausalStock is justified by a specific, "
      "measured finding in the FNSPID data.", "size": 13, "color": WHITE}]}])
 
 # ============================================================ S6  EDA-1
@@ -571,9 +571,9 @@ tb(s, 0.6, 5.75, 12.15, 0.6, [{"align": PP_ALIGN.CENTER, "runs": [
     {"text": "Q & A   —   Thank you for listening", "size": 22, "bold": True,
      "color": WHITE}]}], align=PP_ALIGN.CENTER)
 tb(s, 0.6, 6.35, 12.15, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
-    {"text": "EventChain  ·  CS173 Data Mining Final  ·  Team 2",
+    {"text": "CausalStock  ·  CS173 Data Mining Final  ·  Team 2",
      "size": 12, "color": RGBColor(0x9D, 0xB0, 0xC4)}]}], align=PP_ALIGN.CENTER)
 
-out = HERE / "EventChain_CS173_Final.pptx"
+out = HERE / "CausalStock_CS173_Final.pptx"
 prs.save(out)
 print("saved", out, "—", len(prs.slides.__iter__.__self__._sldIdLst), "slides")
