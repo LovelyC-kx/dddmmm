@@ -4,8 +4,10 @@ Content follows the final report (docs/final-report/report.tex): three-stage
 framework, EDA-driven schema, tabular prediction, stratified-vs-chronological
 result. No ODE, no 0.709 ensemble, no negative-result slide.
 
-20 slides. A dedicated baseline slide + a two-slide comparison block; a
-four-slide data-analysis (EDA) block. Embeds the seven report-aligned figures.
+23 slides. A dedicated baseline slide + a two-slide comparison block; a
+four-slide data-analysis (EDA) block; a seven-slide method block that gives
+each of the three phases its own detailed treatment (Phase 1 x2, Phase 2 x2,
+Phase 3 x3). Seven report-aligned figures.
 
   python docs/final-deck/build_deck.py     # writes _EN.pptx and _ZH.pptx
 """
@@ -55,7 +57,7 @@ def tb(slide, x, y, w, h, paras, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP):
             f.bold = r.get("bold", False)
             f.italic = r.get("italic", False)
             f.color.rgb = r.get("color", INK)
-            f.name = STATE["font"]
+            f.name = r.get("font", STATE["font"])
     return box
 
 
@@ -158,6 +160,14 @@ def stat(slide, x, y, w, big, lb, fc=NAVY, tc=ORANGE):
         {"text": lb, "size": 9.5, "color": WHITE}]}], align=PP_ALIGN.CENTER)
 
 
+def panel(slide, x, y, w, h, title, fill=LIGHT):
+    """A light card with an orange-kicker title; returns the body y."""
+    rect(slide, x, y, w, h, fill, rounded=True)
+    tb(slide, x + 0.25, y + 0.14, w - 0.5, 0.4, [{"runs": [
+        {"text": title, "size": 12.5, "bold": True, "color": ORANGE}]}])
+    return y + 0.58
+
+
 def build(lang):
     EN = lang == "en"
 
@@ -218,9 +228,11 @@ def build(lang):
           ("02", t("Data Analysis (EDA)", "数据分析 (EDA)"),
            t("A four-part exploratory analysis that drives the event schema",
              "四部分的探索性数据分析,驱动事件 schema 设计")),
-          ("03", t("Method", "方法"),
-           t("Phase 1 extraction · Phase 2 causal discovery · Phase 3 prediction",
-             "Phase 1 抽取 · Phase 2 因果发现 · Phase 3 预测")),
+          ("03", t("Method — the Three Phases in Depth",
+                   "方法 —— 三个阶段逐一详解"),
+           t("Phase 1 extraction · Phase 2 causal discovery · Phase 3 "
+             "prediction — each covered in detail",
+             "Phase 1 抽取 · Phase 2 因果发现 · Phase 3 预测 —— 每个阶段都详细展开")),
           ("04", t("Experiments", "实验"),
            t("Stratified vs chronological results, and an ablation",
              "分层 vs 时间 划分结果,以及消融实验")),
@@ -418,40 +430,7 @@ def build(lang):
         "一个事件属性。"), "size": 11, "italic": True, "color": GRAY}]}],
        align=PP_ALIGN.CENTER)
 
-    # ---------------------------------------------------- S10 PHASE 1
-    s = base(t("03  ·  METHOD — PHASE 1", "03  ·  方法 — PHASE 1"),
-             t("Phase 1 — Structured Event Extraction",
-               "Phase 1 —— 结构化事件抽取"), foot)
-    rect(s, 0.6, 1.45, 6.05, 3.0, LIGHT, rounded=True)
-    tb(s, 0.85, 1.6, 5.6, 0.4, [{"runs": [{"text": t(
-        "STRUCTURED EVENT", "结构化事件"), "size": 12.5, "bold": True,
-        "color": ORANGE}]}])
-    bullets(s, 0.85, 2.05, 5.6, 2.3, [
-        t("e = (type, subject, object, magnitude)",
-          "e = (类型, 主体, 对象, 幅度)"),
-        t("20-class event ontology (Macro / Corp / Knowledge / Geo)",
-          "20 类事件本体(宏观 / 公司 / 知识 / 地缘)"),
-        t("+ impact profile: polarity, surprise, scope, novelty, credibility",
-          "+ 影响画像:极性、意外度、范围、新颖度、可信度")], size=12)
-    rect(s, 6.8, 1.45, 5.95, 3.0, LIGHT, rounded=True)
-    tb(s, 7.05, 1.6, 5.5, 0.4, [{"runs": [{"text": t(
-        "FinBERT + MULTI-HEAD DECODER", "FinBERT + 多头解码器"),
-        "size": 12.5, "bold": True, "color": ORANGE}]}])
-    bullets(s, 7.05, 2.05, 5.5, 2.3, [
-        t("Encoder: ProsusAI/finbert for financial text",
-          "编码器:ProsusAI/finbert,金融文本"),
-        t("Three heads: event-type, argument spans, magnitude",
-          "三个头:事件类型、论元跨度、幅度"),
-        t("Weak supervision: LLM silver labels + rule/market corrections",
-          "弱监督:LLM 银标 + 规则/市场校正")], size=12)
-    for i, (big, lb) in enumerate([
-            ("10,901", t("structured events", "结构化事件")),
-            ("20", t("event types", "事件类型")),
-            ("84.8%", t("avg attribute coverage", "平均属性覆盖率")),
-            ("FinBERT", t("encoder backbone", "编码器骨干"))]):
-        stat(s, 0.6 + i * 3.07, 4.85, 2.9, big, lb)
-
-    # ---------------------------------------------------- S11 DATA ANALYSIS
+    # ---------------------------------------------------- S10 EDA-4
     s = base(t("02  ·  DATA ANALYSIS  (4/4)", "02  ·  数据分析  (4/4)"),
              t("Event Stream — Distribution & Attribute Coverage",
                "事件流 —— 分布与属性覆盖率"), foot)
@@ -469,31 +448,180 @@ def build(lang):
         "作为高价值指示器。50 样本抽审:类型一致 84%、动作 78%、极性 91%。"),
         "size": 11.5, "color": WHITE}]}])
 
-    # ---------------------------------------------------- S12 PHASE 2
-    s = base(t("03  ·  METHOD — PHASE 2", "03  ·  方法 — PHASE 2"),
+    # ---------------------------------------------------- S11 PHASE 1a
+    s = base(t("03  ·  METHOD — PHASE 1  (1/2)", "03  ·  方法 — PHASE 1  (1/2)"),
+             t("Phase 1 — The Structured Event Schema",
+               "Phase 1 —— 结构化事件 schema"), foot)
+    tb(s, 0.6, 1.32, 12.2, 0.4, [{"runs": [{"text": t(
+        "Phase 1 turns each free-text article into ONE structured event "
+        "record — a core quadruple plus a five-attribute impact profile.",
+        "Phase 1 把每篇自由文本文章变成一条结构化事件记录 —— 一个核心四元组,"
+        "外加一个五属性的影响画像。"), "size": 12.5, "color": INK}]}])
+    by = panel(s, 0.6, 1.78, 6.05, 2.5,
+               t("EVENT CORE  —  (type, S, A, O, M)", "事件核心 —— (类型, S, A, O, M)"))
+    bullets(s, 0.85, by, 5.6, 1.9, [
+        t("type — one of a 20-class event ontology", "type —— 20 类事件本体之一"),
+        t("subject (S) — the entity that acts", "subject (S) —— 发起动作的主体"),
+        t("action (A) — the relation or verb", "action (A) —— 关系或行为动词"),
+        t("object (O) — the entity affected", "object (O) —— 被影响的对象"),
+        t("magnitude (M) — signed numeric size of the move",
+          "magnitude (M) —— 带符号的数值幅度")], size=10.8, gap=4)
+    by = panel(s, 6.8, 1.78, 5.95, 2.5,
+               t("20-CLASS ONTOLOGY  —  FOUR FAMILIES", "20 类本体 —— 四大族"))
+    bullets(s, 7.05, by, 5.5, 1.9, [
+        t("Macro — rate decisions, inflation, GDP, jobs",
+          "宏观 —— 利率决议、通胀、GDP、就业"),
+        t("Corporate — earnings, M&A, guidance, products",
+          "公司 —— 财报、并购、业绩指引、产品"),
+        t("Knowledge — analyst ratings, research, forecasts",
+          "知识 —— 分析师评级、研究、预测"),
+        t("Geopolitics — regulation, sanctions, conflict",
+          "地缘 —— 监管、制裁、冲突")], size=10.8, gap=4)
+    rect(s, 0.6, 4.45, 12.15, 2.35, NAVY, rounded=True)
+    tb(s, 0.85, 4.58, 11.6, 0.4, [{"runs": [{"text": t(
+        "IMPACT PROFILE  —  5 ATTRIBUTES ATTACHED TO EVERY EVENT",
+        "影响画像 —— 附在每个事件上的 5 个属性"),
+        "size": 12.5, "bold": True, "color": ORANGE}]}])
+    profile = [
+        (t("polarity", "极性"), t("directional sign", "影响的方向"), NAVY),
+        (t("surprise", "意外度"), t("vs. expectation", "相对预期的偏离"), NAVY),
+        (t("scope", "范围"), t("breadth of entities", "影响实体的广度"), ORANGE),
+        (t("novelty", "新颖度"), t("first report vs repeat", "首报 vs 重复"), ORANGE),
+        (t("credibility", "可信度"), t("source reliability", "来源可靠度"), ORANGE)]
+    for i, (nm, ds, cl) in enumerate(profile):
+        cx = 0.9 + i * 2.4
+        rect(s, cx, 5.0, 2.2, 1.0, WHITE, rounded=True)
+        tb(s, cx, 5.12, 2.2, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
+            {"text": nm, "size": 11.5, "bold": True, "color": cl}]}],
+           align=PP_ALIGN.CENTER)
+        tb(s, cx + 0.05, 5.5, 2.1, 0.45, [{"align": PP_ALIGN.CENTER, "lh": 1.05,
+            "runs": [{"text": ds, "size": 8.4, "color": GRAY}]}],
+           align=PP_ALIGN.CENTER)
+    tb(s, 0.9, 6.18, 11.6, 0.5, [{"lh": 1.12, "runs": [
+        {"text": t("Where used:  ", "用在哪里:  "),
+         "size": 10, "bold": True, "color": ORANGE},
+        {"text": t("scope · novelty · credibility are EDA-driven; the profile "
+                   "becomes Phase-3 event features and weights events in the "
+                   "Phase-2 causal aggregation.",
+                   "范围 · 新颖度 · 可信度 由 EDA 驱动;影响画像进入 Phase 3 成为事件"
+                   "特征,并在 Phase 2 的因果聚合中给事件加权。"),
+         "size": 10, "color": PALE}]}])
+
+    # ---------------------------------------------------- S12 PHASE 1b
+    s = base(t("03  ·  METHOD — PHASE 1  (2/2)", "03  ·  方法 — PHASE 1  (2/2)"),
+             t("Phase 1 — Extraction Model & Weak Supervision",
+               "Phase 1 —— 抽取模型与弱监督"), foot)
+    tb(s, 0.6, 1.32, 12.2, 0.4, [{"runs": [{"text": t(
+        "A FinBERT encoder with a multi-head decoder, trained on labels built "
+        "by a four-step weak-supervision pipeline.",
+        "FinBERT 编码器接多头解码器,标签由一条四步弱监督流水线生成。"),
+        "size": 12.5, "color": INK}]}])
+    by = panel(s, 0.6, 1.78, 6.05, 3.55,
+               t("MODEL  —  FinBERT + MULTI-HEAD DECODER",
+                 "模型 —— FinBERT + 多头解码器"))
+    bullets(s, 0.85, by, 5.6, 2.9, [
+        t("Encoder — ProsusAI/finbert, pretrained on financial text",
+          "编码器 —— ProsusAI/finbert,金融文本预训练"),
+        t("Head 1 — event-type classification (20-way softmax)",
+          "头 1 —— 事件类型分类(20 类 softmax)"),
+        t("Head 2 — argument spans (subject / object token spans)",
+          "头 2 —— 论元跨度(主体 / 对象 的 token 跨度)"),
+        t("Head 3 — magnitude regression (signed scalar)",
+          "头 3 —— 幅度回归(带符号标量)"),
+        t("Heads share the encoder and are trained jointly",
+          "三个头共享编码器,联合训练")], size=10.8, gap=5)
+    by = panel(s, 6.8, 1.78, 5.95, 3.55,
+               t("WEAK-SUPERVISION PIPELINE", "弱监督流水线"))
+    steps = [
+        t("1 — LLM silver label  (no gold labels at scale)",
+          "1 — LLM 银标(大规模无金标)"),
+        t("2 — rule correction  (finance keyword / regex)",
+          "2 — 规则校正(金融关键词 / 正则)"),
+        t("3 — market grounding  (check M vs realized return)",
+          "3 — 市场校正(用真实收益核对幅度 M)"),
+        t("4 — hallucination filter  →  accept event",
+          "4 — 幻觉过滤  →  接受事件")]
+    for i, st in enumerate(steps):
+        sy = by + i * 0.66
+        rect(s, 7.05, sy, 5.45, 0.54, WHITE, rounded=True, line=PALE)
+        tb(s, 7.25, sy + 0.10, 5.1, 0.4, [{"runs": [
+            {"text": st, "size": 9.8, "color": INK}]}])
+    for i, (big, lb) in enumerate([
+            ("10,901", t("structured events", "结构化事件")),
+            ("20", t("event types", "事件类型")),
+            ("84.8%", t("avg attribute coverage", "平均属性覆盖率")),
+            ("84 / 78 / 91%", t("audit: type / action / polarity",
+                                "抽审:类型 / 动作 / 极性"))]):
+        stat(s, 0.6 + i * 3.07, 5.55, 2.9, big, lb)
+
+    # ---------------------------------------------------- S13 PHASE 2a
+    s = base(t("03  ·  METHOD — PHASE 2  (1/2)", "03  ·  方法 — PHASE 2  (1/2)"),
              t("Phase 2 — Lag-Aware Causal Discovery (STACD)",
                "Phase 2 —— 滞后感知因果发现 (STACD)"), foot)
-    rect(s, 0.6, 1.45, 5.7, 4.8, LIGHT, rounded=True)
-    tb(s, 0.85, 1.6, 5.3, 0.4, [{"runs": [{"text": t(
-        "GOAL — TWO MATRICES", "目标 —— 两个矩阵"), "size": 12.5, "bold": True,
-        "color": ORANGE}]}])
-    bullets(s, 0.85, 2.0, 5.25, 1.5, [
-        t("A ∈ (0,1)²⁰ˣ²⁰ — directed event-type strength",
-          "A ∈ (0,1)²⁰ˣ²⁰ —— 事件类型间的有向强度"),
-        t("T_lag — expected lag, in days", "T_lag —— 预期滞后天数")], size=12)
-    tb(s, 0.85, 3.25, 5.3, 0.4, [{"runs": [{"text": t(
-        "MECHANISM — STACD", "机制 —— STACD"), "size": 12.5, "bold": True,
-        "color": ORANGE}]}])
-    bullets(s, 0.85, 3.65, 5.25, 2.4, [
-        t("Sparse temporal attention", "稀疏时序注意力"),
-        t("Time-direction mask — only past attends to future",
-          "时间方向掩码 —— 只允许过去影响未来"),
-        t("Lag-aware Gaussian gate + causal-strength gate",
-          "滞后感知高斯门 + 因果强度门"),
-        t("NOTEARS-style acyclicity (DAG) regularizer",
-          "NOTEARS 式无环 (DAG) 正则项")], size=12)
-    rect(s, 6.55, 1.45, 6.2, 4.8, NAVY, rounded=True)
-    tb(s, 6.85, 1.62, 5.7, 0.4, [{"runs": [{"text": t(
+    tb(s, 0.6, 1.32, 12.2, 0.4, [{"runs": [{"text": t(
+        "Phase 2 learns the temporal causal structure between the 20 event "
+        "types — what drives what, and after how long.",
+        "Phase 2 学习 20 个事件类型之间的时序因果结构 —— 谁驱动谁、滞后多久。"),
+        "size": 12.5, "color": INK}]}])
+    by = panel(s, 0.6, 1.78, 5.4, 4.6,
+               t("GOAL  —  TWO LEARNED MATRICES", "目标 —— 两个学习的矩阵"))
+    for i, (nm, ds) in enumerate([
+            ("A  ∈  (0,1)²⁰ˣ²⁰",
+             t("directed causal strength — A[i,j] = how strongly type i "
+               "drives type j",
+               "有向因果强度 —— A[i,j] = 类型 i 驱动类型 j 的强度")),
+            ("T_lag  ∈  ℝ²⁰ˣ²⁰",
+             t("expected lag in days between cause and effect",
+               "因与果之间的预期滞后(天)"))]):
+        ry = by + i * 1.45
+        rect(s, 0.85, ry, 4.9, 1.25, WHITE, rounded=True, line=PALE)
+        tb(s, 1.05, ry + 0.12, 4.5, 0.4, [{"runs": [
+            {"text": nm, "size": 13, "bold": True, "color": NAVY,
+             "font": "Consolas"}]}])
+        tb(s, 1.05, ry + 0.5, 4.5, 0.65, [{"lh": 1.13, "runs": [
+            {"text": ds, "size": 9.8, "color": GRAY}]}])
+    tb(s, 0.85, by + 3.0, 4.9, 0.7, [{"lh": 1.15, "runs": [{"text": t(
+        "Both matrices are learned end-to-end from the event stream.",
+        "两个矩阵都从事件流端到端学习得到。"),
+        "size": 9.6, "italic": True, "color": GRAY}]}])
+    rect(s, 6.25, 1.78, 6.5, 4.6, NAVY, rounded=True)
+    tb(s, 6.55, 1.92, 5.9, 0.4, [{"runs": [{"text": t(
+        "MECHANISM  —  STACD COMPONENTS", "机制 —— STACD 的组件"),
+        "size": 12.5, "bold": True, "color": ORANGE}]}])
+    comps = [
+        (t("Sparse temporal attention", "稀疏时序注意力"),
+         t("attention over the event sequence, sparsified to keep real links",
+           "在事件序列上做注意力,稀疏化以保留真实连边")),
+        (t("Time-direction mask", "时间方向掩码"),
+         t("only the past attends to the future — no leakage backward",
+           "只允许过去影响未来 —— 不向后泄漏")),
+        (t("Lag-aware Gaussian gate", "滞后感知高斯门"),
+         t("peaks when the observed gap matches the learned T_lag",
+           "当观测到的时间间隔接近学到的 T_lag 时取峰值")),
+        (t("Causal-strength gate", "因果强度门"),
+         t("modulates each attention weight by the learned strength A",
+           "用学到的强度 A 调制每个注意力权重")),
+        (t("NOTEARS-style regularizer", "NOTEARS 式正则项"),
+         t("an acyclicity penalty that keeps the graph a valid DAG",
+           "无环惩罚项,使图保持为合法的 DAG"))]
+    for i, (hd, bd) in enumerate(comps):
+        cy = 2.36 + i * 0.79
+        tb(s, 6.55, cy, 5.9, 0.32, [{"runs": [
+            {"text": "▪  " + hd, "size": 11, "bold": True, "color": WHITE}]}])
+        tb(s, 6.85, cy + 0.3, 5.6, 0.42, [{"lh": 1.1, "runs": [
+            {"text": bd, "size": 9.2, "color": PALE}]}])
+
+    # ---------------------------------------------------- S14 PHASE 2b
+    s = base(t("03  ·  METHOD — PHASE 2  (2/2)", "03  ·  方法 — PHASE 2  (2/2)"),
+             t("Phase 2 — Attention Modulation & Interpretability",
+               "Phase 2 —— 注意力调制与可解释性"), foot)
+    tb(s, 0.6, 1.32, 12.2, 0.4, [{"runs": [{"text": t(
+        "The three gates enter the attention score additively in log-space; "
+        "the loss adds sparsity and an acyclicity penalty.",
+        "三个门以对数空间相加的方式进入注意力打分;损失再加稀疏项与无环惩罚。"),
+        "size": 12.5, "color": INK}]}])
+    rect(s, 0.6, 1.78, 7.1, 3.45, NAVY, rounded=True)
+    tb(s, 0.9, 1.92, 6.5, 0.4, [{"runs": [{"text": t(
         "ATTENTION MODULATION", "注意力调制"), "size": 12.5, "bold": True,
         "color": ORANGE}]}])
     for i, eq in enumerate([
@@ -501,16 +629,34 @@ def build(lang):
             "s_ij' = s_ij + log m_ij + log g_ij + log A[k_j,k_i]",
             "α_ij = softmax_j ( s_ij' )",
             "L = L_pred + λ1·||A||1 + λ_DAG·h(A)^2"]):
-        tb(s, 6.95, 2.2 + i * 0.66, 5.6, 0.5, [{"runs": [
-            {"text": eq, "size": 11.5, "color": WHITE, "font": "Consolas"}]}])
-    tb(s, 6.95, 5.0, 5.6, 1.1, [{"lh": 1.2, "runs": [{"text": t(
-        "Nodes are event types, not stocks — the graph is designed to support "
-        "interpretable, transferable event-chain analysis.",
-        "节点是事件类型而非个股 —— 该图为可解释、可迁移的事件链分析而设计。"),
-        "size": 10.5, "italic": True, "color": PALE}]}])
+        tb(s, 0.95, 2.42 + i * 0.62, 6.6, 0.5, [{"runs": [
+            {"text": eq, "size": 11, "color": WHITE, "font": "Consolas"}]}])
+    tb(s, 0.95, 4.95, 6.6, 0.3, [{"runs": [{"text": t(
+        "k_j = event type of token j", "k_j = token j 的事件类型"),
+        "size": 8.6, "italic": True, "color": PALE}]}])
+    by = panel(s, 7.85, 1.78, 4.9, 3.45, t("TERMS", "符号说明"))
+    bullets(s, 8.05, by, 4.55, 2.7, [
+        t("s_ij — raw attention score", "s_ij —— 原始注意力打分"),
+        t("m_ij — time-direction mask", "m_ij —— 时间方向掩码"),
+        t("g_ij — lag-aware Gaussian gate", "g_ij —— 滞后感知高斯门"),
+        t("A — causal-strength matrix", "A —— 因果强度矩阵"),
+        t("h(A) — DAG acyclicity penalty", "h(A) —— DAG 无环惩罚")],
+        size=10.2, gap=6)
+    rect(s, 0.6, 5.4, 12.15, 1.4, NAVY, rounded=True)
+    tb(s, 0.95, 5.54, 11.5, 0.4, [{"runs": [{"text": t(
+        "Why nodes are event types, not stocks", "为什么节点是事件类型而非个股"),
+        "size": 12, "bold": True, "color": ORANGE}]}])
+    tb(s, 0.95, 5.92, 11.5, 0.8, [{"lh": 1.16, "runs": [{"text": t(
+        "A 20-node event-type graph stays the same across companies and "
+        "markets, so it is designed to support interpretable, transferable "
+        "event-chain analysis — a stock-level graph is bound to a fixed "
+        "company universe.",
+        "一张 20 节点的事件类型图在不同公司、不同市场之间保持不变,因此该图为"
+        "可解释、可迁移的事件链分析而设计 —— 个股级的图则绑定在固定的股票池上。"),
+        "size": 11, "color": WHITE}]}])
 
-    # ---------------------------------------------------- S13 PHASE 3 SETUP
-    s = base(t("03  ·  METHOD — PHASE 3", "03  ·  方法 — PHASE 3"),
+    # ---------------------------------------------------- S15 PHASE 3a
+    s = base(t("03  ·  METHOD — PHASE 3  (1/3)", "03  ·  方法 — PHASE 3  (1/3)"),
              t("Phase 3 — Problem Setup & Dataset", "Phase 3 —— 问题设定与数据集"),
              foot)
     rect(s, 0.6, 1.45, 6.0, 3.05, LIGHT, rounded=True)
@@ -548,46 +694,86 @@ def build(lang):
             ("2010–2023", t("time span", "时间跨度"))]):
         stat(s, 0.6 + i * 4.07, 4.8, 3.85, big, lb)
 
-    # ---------------------------------------------------- S14 PHASE 3 MODEL
-    s = base(t("03  ·  METHOD — PHASE 3", "03  ·  方法 — PHASE 3"),
-             t("Phase 3 — Feature Engineering & Model",
-               "Phase 3 —— 特征工程与模型"), foot)
-    rect(s, 0.6, 1.45, 12.15, 1.5, LIGHT, rounded=True)
-    tb(s, 0.85, 1.58, 11.6, 0.4, [{"runs": [{"text": t(
-        "x = [ price ‖ event ‖ stock-ID ]   —   a 132-dimensional vector",
-        "x = [ 价格 ‖ 事件 ‖ 股票身份 ]   —   一个 132 维向量"),
-        "size": 13, "bold": True, "color": ORANGE}]}])
-    for i, (d, lb) in enumerate([
-            (t("Price  28-d", "价格 28 维"),
-             t("returns, volatility, log-volume, OHLC",
-               "收益率、波动率、对数成交量、OHLC")),
-            (t("Event  82-d", "事件 82 维"),
-             t("type counts, signed/abs magnitude, last type",
-               "类型计数、带符号/绝对幅度和、末事件类型")),
-            (t("Stock  22-d", "股票 22 维"),
-             t("one-hot ticker identity", "股票 one-hot 身份"))]):
-        cx = 0.85 + i * 4.0
-        tb(s, cx, 1.98, 3.8, 0.4, [{"runs": [
-            {"text": d, "size": 13, "bold": True, "color": NAVY}]}])
-        tb(s, cx, 2.36, 3.8, 0.5, [{"lh": 1.05, "runs": [
-            {"text": lb, "size": 9.5, "color": GRAY}]}])
-    rect(s, 0.6, 3.2, 12.15, 2.95, NAVY, rounded=True)
-    tb(s, 0.95, 3.37, 11.6, 0.4, [{"runs": [{"text": t(
-        "Why HistGradientBoosting (HGB) over a neural net?",
-        "为什么 Phase 3 用 HistGradientBoosting 而非神经网络?"),
-        "size": 13.5, "bold": True, "color": ORANGE}]}])
-    bullets(s, 0.95, 3.85, 11.6, 2.2, [
-        (t("Heterogeneous features — handles counts, ratios, one-hots.",
-           "异构特征 —— 天然处理计数、比率、one-hot。"), 0, WHITE),
-        (t("Strong, interpretable baseline — quantifies each source.",
-           "强且可解释的基线 —— 能量化各信息源的贡献。"), 0, WHITE),
-        (t("Scale-invariant tree splits — minimal feature engineering.",
-           "树分裂对尺度不敏感 —— 特征工程量小。"), 0, WHITE),
-        (t("Config: max_iter 150 · learning_rate 0.04 · l2 0.05.",
-           "配置:max_iter 150 · learning_rate 0.04 · l2 0.05。"), 0, PALE)],
-        size=12.5, gap=9)
+    # ---------------------------------------------------- S16 PHASE 3b
+    s = base(t("03  ·  METHOD — PHASE 3  (2/3)", "03  ·  方法 — PHASE 3  (2/3)"),
+             t("Phase 3 — Feature Engineering (132-d)",
+               "Phase 3 —— 特征工程(132 维)"), foot)
+    rect(s, 0.6, 1.4, 12.15, 0.92, NAVY, rounded=True)
+    tb(s, 0.6, 1.58, 12.15, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [{"text": t(
+        "x = [ price ‖ event ‖ stock-ID ]   =   132-dimensional feature vector",
+        "x = [ 价格 ‖ 事件 ‖ 股票身份 ]   =   132 维特征向量"),
+        "size": 14, "bold": True, "color": WHITE}]}], align=PP_ALIGN.CENTER)
+    fcards = [
+        (t("PRICE  ·  28-d", "价格  ·  28 维"), [
+            t("Multi-horizon returns — 1 / 5 / 10 / 20-day",
+              "多周期收益率 —— 1 / 5 / 10 / 20 日"),
+            t("Realized volatility & ranges", "已实现波动率与振幅"),
+            t("Log-volume & volume trend", "对数成交量与量能趋势"),
+            t("OHLC ratios & gaps", "OHLC 比率与跳空"),
+            t("Short-term momentum", "短期动量")]),
+        (t("EVENT  ·  82-d", "事件  ·  82 维"), [
+            t("Per-type event counts (20-d)", "各类型事件计数(20 维)"),
+            t("Signed magnitude sums per family", "各族带符号幅度和"),
+            t("Absolute magnitude sums", "绝对幅度和"),
+            t("Impact-profile means — polarity, surprise, "
+              "scope, novelty, credibility",
+              "影响画像均值 —— 极性、意外度、范围、新颖度、可信度"),
+            t("Last-event type one-hot", "末事件类型 one-hot")]),
+        (t("STOCK-ID  ·  22-d", "股票身份  ·  22 维"), [
+            t("One-hot ticker identity", "股票 one-hot 身份"),
+            t("22 stocks in the universe", "股票池共 22 只"),
+            t("Lets the model learn ticker-specific volatility "
+              "and reaction patterns",
+              "让模型学到个股特有的波动与反应模式")])]
+    for i, (hd, items) in enumerate(fcards):
+        cx = 0.6 + i * 4.16
+        rect(s, cx, 2.6, 3.83, 3.4, LIGHT, rounded=True)
+        rect(s, cx, 2.6, 3.83, 0.5, NAVY)
+        tb(s, cx, 2.68, 3.83, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
+            {"text": hd, "size": 12, "bold": True, "color": WHITE}]}],
+           align=PP_ALIGN.CENTER)
+        bullets(s, cx + 0.22, 3.25, 3.5, 2.6, items, size=9.6, gap=6)
+    tb(s, 0.6, 6.2, 12.15, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [{"text": t(
+        "Every feature is an aggregate over the 32-event / 30-day window — "
+        "strictly past information, no look-ahead.",
+        "每个特征都是 32 事件 / 30 天窗口上的聚合量 —— 严格只用过去信息,无未来泄漏。"),
+        "size": 10.5, "italic": True, "color": GRAY}]}], align=PP_ALIGN.CENTER)
 
-    # ---------------------------------------------------- S15 KEY RESULT
+    # ---------------------------------------------------- S17 PHASE 3c
+    s = base(t("03  ·  METHOD — PHASE 3  (3/3)", "03  ·  方法 — PHASE 3  (3/3)"),
+             t("Phase 3 — Model: HistGradientBoosting",
+               "Phase 3 —— 模型:HistGradientBoosting"), foot)
+    tb(s, 0.6, 1.32, 12.2, 0.4, [{"runs": [{"text": t(
+        "The classifier over the 132-d vector is HistGradientBoosting (HGB) — "
+        "a histogram-based gradient-boosted tree ensemble.",
+        "132 维向量上的分类器是 HistGradientBoosting(HGB)—— 一个基于直方图的"
+        "梯度提升树集成。"), "size": 12.5, "color": INK}]}])
+    by = panel(s, 0.6, 1.78, 6.05, 4.05,
+               t("WHY HGB OVER A NEURAL NET", "为什么用 HGB 而非神经网络"))
+    bullets(s, 0.85, by, 5.6, 3.3, [
+        t("Heterogeneous features — counts, ratios, one-hots handled natively",
+          "异构特征 —— 计数、比率、one-hot 都能原生处理"),
+        t("Scale-invariant tree splits — minimal feature engineering",
+          "树分裂对尺度不敏感 —— 特征工程量极小"),
+        t("Strong, interpretable baseline — reads each source's contribution",
+          "强且可解释的基线 —— 能读出各信息源的贡献"),
+        t("Robust on a 9,566-example dataset — no large-data requirement",
+          "在 9,566 样本规模上稳健 —— 不依赖大数据")], size=11, gap=11)
+    by = panel(s, 6.8, 1.78, 5.95, 4.05,
+               t("CONFIGURATION & TRAINING", "配置与训练"), fill=NAVY)
+    bullets(s, 7.05, by, 5.5, 3.3, [
+        (t("max_iter 150 · learning_rate 0.04 · L2 0.05", "max_iter 150 · "
+           "learning_rate 0.04 · L2 0.05"), 0, WHITE),
+        (t("Early stopping on a held-out validation loss",
+           "在留出验证损失上早停"), 0, WHITE),
+        (t("3-class softmax output — UP / DOWN / FLAT",
+           "三类 softmax 输出 —— UP / DOWN / FLAT"), 0, WHITE),
+        (t("macro-F1 as the headline metric (FLAT is the minority class)",
+           "以 macro-F1 为主指标(FLAT 为少数类)"), 0, WHITE),
+        (t("Evaluated under both stratified and chronological splits",
+           "在分层划分与时间划分下分别评估"), 0, PALE)], size=11, gap=11)
+
+    # ---------------------------------------------------- S18 KEY RESULT
     s = base(t("04  ·  EXPERIMENTS", "04  ·  实验"),
              t("Key Result — Stratified vs Chronological",
                "核心结果 —— 分层划分 vs 时间划分"), foot)
@@ -609,7 +795,7 @@ def build(lang):
            "我们两个都报 —— 只报分层那个数会高估真实预测力。"), 1, NAVY)],
         size=12)
 
-    # ---------------------------------------------------- S16 ABLATION
+    # ---------------------------------------------------- S19 ABLATION
     s = base(t("04  ·  EXPERIMENTS", "04  ·  实验"),
              t("Ablation — Feature-Group Contribution", "消融实验 —— 各信息源的贡献"),
              foot)
@@ -635,7 +821,7 @@ def build(lang):
           "it is the configuration we report.",
           "组合表示在分层划分下可学习 —— 这是我们汇报的配置。")], size=12)
 
-    # ---------------------------------------------------- S17 COMPARISON TABLE
+    # ---------------------------------------------------- S20 COMPARISON TABLE
     s = base(t("05  ·  COMPARISON", "05  ·  对比"),
              t("Comparison with the Baseline — Multi-Axis",
                "与基线的多维对比"), foot)
@@ -666,7 +852,7 @@ def build(lang):
         "互补而非竞争 —— 事件类型级因果可跨公司、跨市场迁移;个股级因果绑定"
         "在固定股票池。"), "size": 12, "color": WHITE}]}])
 
-    # ---------------------------------------------------- S18 COMPARISON ANALYSIS
+    # ---------------------------------------------------- S21 COMPARISON ANALYSIS
     s = base(t("05  ·  COMPARISON", "05  ·  对比"),
              t("Comparison — An Interpretable Reading of the Gap",
                "对比 —— 对差距的可解释分析"), foot)
@@ -712,7 +898,7 @@ def build(lang):
         "更诚实的评估。"), "size": 11, "italic": True, "color": GRAY}]}],
        align=PP_ALIGN.CENTER)
 
-    # ---------------------------------------------------- S19 CONCLUSION
+    # ---------------------------------------------------- S22 CONCLUSION
     s = base(t("05  ·  CONCLUSION", "05  ·  结论"),
              t("Conclusion & Future Work", "总结与未来工作"), foot)
     rect(s, 0.6, 1.5, 6.0, 4.7, LIGHT, rounded=True)
@@ -749,7 +935,7 @@ def build(lang):
         "在哪里有用的诚实研究。"),
         "size": 11, "italic": True, "color": GRAY}]}], align=PP_ALIGN.CENTER)
 
-    # ---------------------------------------------------- S20 Q&A
+    # ---------------------------------------------------- S23 Q&A
     s = base(t("THANK YOU", "致谢"), "Q & A", foot)
     rect(s, 0.6, 2.4, 12.15, 2.6, NAVY, rounded=True)
     tb(s, 0.6, 3.0, 12.15, 0.7, [{"align": PP_ALIGN.CENTER, "runs": [{"text": t(
