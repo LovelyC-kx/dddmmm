@@ -1,10 +1,11 @@
 """Build the CausalStock CS173 final-presentation deck (16:9), EN + ZH.
 
-Content follows the final report (docs/final-report/report.tex). No ODE, no
-0.709 ensemble, no negative-result slide. 17 slides; embeds the seven
-report-aligned figures from ../figures.
+Content follows the final report (docs/final-report/report.tex): three-stage
+framework, EDA-driven schema, tabular prediction, stratified-vs-chronological
+result. No ODE, no 0.709 ensemble, no negative-result slide.
 
-Opening funnel: prior-method problems -> what we change -> the pipeline.
+20 slides. A dedicated baseline slide + a two-slide comparison block; a
+four-slide data-analysis (EDA) block. Embeds the seven report-aligned figures.
 
   python docs/final-deck/build_deck.py     # writes _EN.pptx and _ZH.pptx
 """
@@ -93,7 +94,7 @@ def base(kicker, title, footer):
     tb(s, 0.55, 0.10, 12, 0.3,
        [{"runs": [{"text": kicker, "size": 12, "bold": True, "color": ORANGE}]}])
     tb(s, 0.55, 0.33, 12.2, 0.62,
-       [{"runs": [{"text": title, "size": 22, "bold": True, "color": WHITE}]}])
+       [{"runs": [{"text": title, "size": 21, "bold": True, "color": WHITE}]}])
     tb(s, 0.55, 7.10, 9, 0.3,
        [{"runs": [{"text": footer, "size": 9, "color": GRAY}]}])
     tb(s, 12.1, 7.10, 0.8, 0.3,
@@ -102,7 +103,7 @@ def base(kicker, title, footer):
     return s
 
 
-def bullets(slide, x, y, w, h, items, size=14.5, gap=7):
+def bullets(slide, x, y, w, h, items, size=14, gap=6):
     paras = []
     for it in items:
         lvl, txt, color = 0, it, INK
@@ -111,14 +112,14 @@ def bullets(slide, x, y, w, h, items, size=14.5, gap=7):
             color = it[2] if len(it) > 2 else INK
         mark = "" if lvl else "▪  "
         ind = "      " if lvl else ""
-        paras.append({"sa": gap, "lh": 1.14, "runs": [
+        paras.append({"sa": gap, "lh": 1.13, "runs": [
             {"text": ind + mark, "size": size,
              "color": ORANGE if not lvl else GRAY, "bold": True},
             {"text": txt, "size": size if not lvl else size - 1.5, "color": color}]})
     return tb(slide, x, y, w, h, paras)
 
 
-def table(slide, x, y, w, data, col_w, fs=11.5, row_h=0.42):
+def table(slide, x, y, w, data, col_w, fs=11, row_h=0.42):
     rows, cols = len(data), len(data[0])
     gt = slide.shapes.add_table(rows, cols, Inches(x), Inches(y),
                                 Inches(w), Inches(row_h * rows)).table
@@ -130,8 +131,8 @@ def table(slide, x, y, w, data, col_w, fs=11.5, row_h=0.42):
         for ci, val in enumerate(row):
             cell = gt.cell(ri, ci)
             cell.vertical_anchor = MSO_ANCHOR.MIDDLE
-            cell.margin_left = Inches(0.09)
-            cell.margin_right = Inches(0.06)
+            cell.margin_left = Inches(0.08)
+            cell.margin_right = Inches(0.05)
             cell.margin_top = Inches(0.02)
             cell.margin_bottom = Inches(0.02)
             cell.fill.solid()
@@ -146,6 +147,15 @@ def table(slide, x, y, w, data, col_w, fs=11.5, row_h=0.42):
             run.font.color.rgb = WHITE if ri == 0 else INK
             run.font.name = STATE["font"]
     return gt
+
+
+def stat(slide, x, y, w, big, lb, fc=NAVY, tc=ORANGE):
+    rect(slide, x, y, w, 1.15, fc, rounded=True)
+    tb(slide, x, y + 0.13, w, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [
+        {"text": big, "size": 17, "bold": True, "color": tc}]}],
+       align=PP_ALIGN.CENTER)
+    tb(slide, x, y + 0.62, w, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
+        {"text": lb, "size": 9.5, "color": WHITE}]}], align=PP_ALIGN.CENTER)
 
 
 def build(lang):
@@ -164,7 +174,7 @@ def build(lang):
     foot = t("CausalStock  ·  CS173 Data Mining  ·  Team 2",
              "CausalStock  ·  CS173 数据挖掘  ·  第二组")
 
-    # -------------------------------------------------- S1 TITLE
+    # ---------------------------------------------------- S1 TITLE
     s = prs.slides.add_slide(BLANK)
     STATE["page"] += 1
     rect(s, 0, 0, 13.333, 7.5, NAVY)
@@ -177,8 +187,7 @@ def build(lang):
         {"text": "CausalStock", "size": 64, "bold": True, "color": WHITE}]}])
     tb(s, 0.9, 2.42, 12, 0.6, [{"runs": [{"text": t(
         "Event-Structured Temporal Causal Modeling for News-Driven Stock "
-        "Prediction",
-        "面向新闻驱动股价预测的事件结构化时序因果建模"),
+        "Prediction", "面向新闻驱动股价预测的事件结构化时序因果建模"),
         "size": 19, "color": PALE}]}])
     cards = [(t("Data-driven", "数据驱动"),
               t("3 EDA findings  →  3 new event attributes",
@@ -201,32 +210,35 @@ def build(lang):
         "第二组     ·     CS173 期末项目     ·     2026 年 5 月"),
         "size": 13, "color": RGBColor(0x9D, 0xB0, 0xC4)}]}])
 
-    # -------------------------------------------------- S2 AGENDA
+    # ---------------------------------------------------- S2 AGENDA
     s = base(t("AGENDA", "汇报目录"), t("Roadmap", "目录"), foot)
-    ag = [("01", t("Problem & Innovation", "问题与创新"),
-           t("What prior methods get wrong, and the three things we change",
-             "现有方法的问题,以及我们改变的三件事")),
-          ("02", t("Framework & Data", "框架与数据"),
-           t("The three-stage pipeline; the EDA that drives the schema",
-             "三阶段流程;驱动 schema 设计的探索性数据分析")),
+    ag = [("01", t("Problem & Baseline", "问题与基线"),
+           t("Prior-method limits, the CausalStock baseline, our innovations",
+             "现有方法的局限、CausalStock 基线、我们的创新")),
+          ("02", t("Data Analysis (EDA)", "数据分析 (EDA)"),
+           t("A four-part exploratory analysis that drives the event schema",
+             "四部分的探索性数据分析,驱动事件 schema 设计")),
           ("03", t("Method", "方法"),
            t("Phase 1 extraction · Phase 2 causal discovery · Phase 3 prediction",
              "Phase 1 抽取 · Phase 2 因果发现 · Phase 3 预测")),
-          ("04", t("Experiments & Conclusion", "实验与结论"),
-           t("Results, ablation, comparison, and an honest read",
-             "结果、消融、对比,以及诚实的解读"))]
+          ("04", t("Experiments", "实验"),
+           t("Stratified vs chronological results, and an ablation",
+             "分层 vs 时间 划分结果,以及消融实验")),
+          ("05", t("Comparison & Conclusion", "对比与结论"),
+           t("A multi-axis comparison with the baseline, and future work",
+             "与基线的多维对比,以及未来工作"))]
     for i, (no, hd, bd) in enumerate(ag):
-        y = 1.7 + i * 1.25
-        tb(s, 0.7, y, 1.0, 0.8, [{"runs": [
-            {"text": no, "size": 30, "bold": True,
+        y = 1.4 + i * 1.06
+        tb(s, 0.7, y, 1.0, 0.7, [{"runs": [
+            {"text": no, "size": 26, "bold": True,
              "color": RGBColor(0xD9, 0xE2, 0xEC)}]}])
-        rect(s, 1.85, y + 0.07, 0.06, 0.7, ORANGE)
-        tb(s, 2.15, y, 10.5, 0.5, [{"runs": [
-            {"text": hd, "size": 19, "bold": True, "color": NAVY}]}])
-        tb(s, 2.15, y + 0.46, 10.6, 0.5, [{"lh": 1.1, "runs": [
-            {"text": bd, "size": 12.5, "color": GRAY}]}])
+        rect(s, 1.8, y + 0.05, 0.06, 0.62, ORANGE)
+        tb(s, 2.1, y, 10.6, 0.45, [{"runs": [
+            {"text": hd, "size": 18, "bold": True, "color": NAVY}]}])
+        tb(s, 2.1, y + 0.44, 10.7, 0.45, [{"lh": 1.1, "runs": [
+            {"text": bd, "size": 12, "color": GRAY}]}])
 
-    # -------------------------------------------------- S3 PROBLEM
+    # ---------------------------------------------------- S3 PROBLEM
     s = base(t("01  ·  PROBLEM", "01  ·  问题"),
              t("What Prior Methods Get Wrong", "现有方法的三大问题"), foot)
     tb(s, 0.6, 1.35, 12, 0.4, [{"runs": [{"text": t(
@@ -263,13 +275,58 @@ def build(lang):
         tb(s, 8.95, y + 0.2, 3.6, 1.05, [{"lh": 1.18, "runs": [
             {"text": eg, "size": 9.5, "italic": True, "color": GRAY}]}])
 
-    # -------------------------------------------------- S4 INNOVATION
+    # ---------------------------------------------------- S4 BASELINE
+    s = base(t("01  ·  BASELINE", "01  ·  基线"),
+             t("Baseline — CausalStock (NeurIPS 2024)",
+               "基线 —— CausalStock (NeurIPS 2024)"), foot)
+    tb(s, 0.6, 1.4, 12, 0.4, [{"runs": [{"text": t(
+        "What the baseline does", "基线做了什么"),
+        "size": 14, "bold": True, "color": ORANGE}]}])
+    for i, (hd, bd) in enumerate([
+            (t("Denoised news encoder", "去噪新闻编码器"),
+             t("An LLM compresses each article into one dense embedding vector.",
+               "用 LLM 把每篇文章压成一个稠密嵌入向量。")),
+            (t("Stock-level causal graph", "个股级因果图"),
+             t("Lag-dependent causality is learned between individual stocks.",
+               "在个股之间学习带滞后的因果关系。"))]):
+        cx = 0.6 + i * 6.15
+        rect(s, cx, 1.82, 5.85, 1.15, LIGHT, rounded=True)
+        rect(s, cx, 1.82, 0.12, 1.15, ORANGE)
+        tb(s, cx + 0.25, 1.94, 5.45, 0.4, [{"runs": [
+            {"text": hd, "size": 13, "bold": True, "color": NAVY}]}])
+        tb(s, cx + 0.25, 2.32, 5.45, 0.6, [{"lh": 1.12, "runs": [
+            {"text": bd, "size": 10.5, "color": INK}]}])
+    tb(s, 0.6, 3.2, 12, 0.4, [{"runs": [{"text": t(
+        "Two blind spots — and our response", "两个盲点 —— 以及我们的对策"),
+        "size": 14, "bold": True, "color": ORANGE}]}])
+    table(s, 0.6, 3.62, 12.15, [
+        [t("Baseline blind spot", "基线的盲点"),
+         t("CausalStock (ours) response", "我们的对策")],
+        [t("One vector per article hides event type, magnitude, entity",
+           "一篇一个向量,藏掉了事件类型、幅度、影响对象"),
+         t("A structured event: (S,A,O,M) + impact profile",
+           "结构化事件:(主体,行为,对象,幅度) + 影响画像")],
+        [t("A stock-level graph cannot say what kind of event drove a link",
+           "个股级的图说不出是什么事件驱动了这条边"),
+         t("A causal graph over 20 event types, transferable across firms",
+           "20 个事件类型上的因果图,可跨公司迁移")]],
+        [6.05, 6.1], fs=11.5, row_h=0.62)
+    rect(s, 0.6, 5.75, 12.15, 0.95, NAVY, rounded=True)
+    tb(s, 0.95, 5.93, 11.5, 0.6, [{"lh": 1.12, "runs": [
+        {"text": t("Takeaway:  ", "结论:  "), "size": 12.5, "bold": True,
+         "color": ORANGE},
+        {"text": t("the baseline is strong but structure-blind — we restore "
+                   "event structure and move causality to the event-type level.",
+                   "基线很强但对结构盲视 —— 我们恢复事件结构,并把因果移到事件类型级。"),
+         "size": 12.5, "color": WHITE}]}])
+
+    # ---------------------------------------------------- S5 INNOVATION
     s = base(t("01  ·  INNOVATION", "01  ·  创新"),
-             t("What We Change — Three Innovations", "我们改变了什么 —— 三个创新点"),
-             foot)
+             t("What We Change — Three Innovations",
+               "我们改变了什么 —— 三个创新点"), foot)
     tb(s, 0.6, 1.35, 12, 0.4, [{"runs": [{"text": t(
-        "Each prior-method problem maps to one design change in CausalStock:",
-        "现有方法的每个问题,精确对应 CausalStock 的一项设计改变:"),
+        "Each prior-method problem maps to one design change:",
+        "现有方法的每个问题,精确对应一项设计改变:"),
         "size": 13, "color": INK}]}])
     table(s, 0.6, 1.85, 12.15, [
         [t("Prior-method problem", "现有方法的问题"),
@@ -286,54 +343,82 @@ def build(lang):
         [5.5, 6.65], fs=12.5, row_h=0.72)
     rect(s, 0.6, 5.05, 12.15, 1.6, NAVY, rounded=True)
     tb(s, 0.95, 5.22, 11.6, 0.45, [{"runs": [{"text": t(
-        "Two principles cut across all three:",
-        "两条原则贯穿这三点:"), "size": 13, "bold": True, "color": ORANGE}]}])
+        "Two principles cut across all three:", "两条原则贯穿这三点:"),
+        "size": 13, "bold": True, "color": ORANGE}]}])
     tb(s, 0.95, 5.62, 11.6, 0.95, [{"lh": 1.2, "runs": [{"text": t(
-        "Data-driven — the event schema is earned from a measured EDA of the "
-        "corpus, not assumed.   Honest — every result is reported under both a "
-        "stratified and a chronological split.",
-        "数据驱动 —— 事件 schema 由语料的实测 EDA 得来,而非预设。  诚实 —— "
-        "每个结果都同时在分层划分与时间划分下报告。"),
+        "Data-driven — the event schema is earned from a measured EDA, not "
+        "assumed.   Honest — every result is reported under both a stratified "
+        "and a chronological split.",
+        "数据驱动 —— 事件 schema 由实测 EDA 得来,而非预设。  诚实 —— 每个结果"
+        "都同时在分层划分与时间划分下报告。"),
         "size": 12.5, "color": WHITE}]}])
 
-    # -------------------------------------------------- S5 PIPELINE
+    # ---------------------------------------------------- S6 PIPELINE
     s = base(t("01  ·  FRAMEWORK", "01  ·  框架"),
              t("End-to-End Pipeline", "端到端技术流程"), foot)
     pic(s, "fig_architecture.png", 1.45, 5.5, 12.5)
     tb(s, 0.6, 6.95, 12, 0.35, [{"align": PP_ALIGN.CENTER, "runs": [{"text": t(
         "Three stages: extract structured events, learn lag-aware event-type "
         "structure, predict with a transparent tabular model.",
-        "三阶段:抽取结构化事件 → 学习滞后感知的事件类型结构 → 用透明的表格模型预测。"),
+        "三阶段:抽取结构化事件 → 学习滞后感知的事件类型结构 → 用透明表格模型预测。"),
         "size": 10.5, "italic": True, "color": GRAY}]}], align=PP_ALIGN.CENTER)
 
-    # -------------------------------------------------- S6 EDA AUDIT
-    s = base(t("02  ·  DATA", "02  ·  数据"),
-             t("EDA — Missingness, Duplication, Event Density",
-               "EDA —— 缺失率、重复率、事件密度"), foot)
-    pic(s, "fig_eda_missing.png", 1.65, 3.7, 6.0, x=0.55)
-    pic(s, "fig_eda_clues.png", 1.65, 3.9, 6.6, x=6.7)
-    rect(s, 0.55, 5.7, 12.25, 1.25, NAVY, rounded=True)
-    tb(s, 0.9, 5.84, 11.6, 0.95, [{"lh": 1.18, "runs": [{"text": t(
-        "URL is ~complete while publisher/author are mostly missing → "
-        "credibility from the URL domain. 88% price language / 77% numeric "
-        "cues → the corpus is event-dense, so structured extraction is "
-        "justified.",
-        "URL 几乎不缺、publisher/author 大量缺失 → 用 URL 域名做 credibility。"
-        "88% 价格语言 / 77% 数值线索 → 语料事件密集,做结构化抽取是有依据的。"),
-        "size": 11.5, "color": WHITE}]}])
+    # ---------------------------------------------------- S7 EDA-1
+    s = base(t("02  ·  DATA ANALYSIS  (1/4)", "02  ·  数据分析  (1/4)"),
+             t("Dataset Snapshot & Field Completeness",
+               "数据集概览与字段完整度"), foot)
+    for i, (big, lb) in enumerate([
+            ("10,901", t("structured events", "结构化事件")),
+            ("9,566", t("ticker-aligned examples", "个股对齐样本")),
+            ("22", t("stocks", "只股票")),
+            ("2010–23", t("time span", "时间跨度"))]):
+        stat(s, 0.6 + i * 1.62, 1.5, 1.5, big, lb)
+    pic(s, "fig_eda_missing.png", 2.95, 3.5, 6.0, x=0.6)
+    rect(s, 7.5, 1.5, 5.3, 5.05, LIGHT, rounded=True)
+    tb(s, 7.75, 1.66, 4.9, 0.4, [{"runs": [{"text": t(
+        "OBSERVATIONS", "观察"), "size": 13, "bold": True, "color": ORANGE}]}])
+    bullets(s, 7.75, 2.12, 4.9, 4.3, [
+        t("URL present 99.98%, Stock_symbol 67%, Author 32%, Publisher 21%.",
+          "URL 完整 99.98%,Stock_symbol 67%,Author 32%,Publisher 21%。"),
+        (t("→ publisher / author too sparse to supervise on; credibility "
+           "instead comes from the URL domain.",
+           "→ publisher / author 太稀疏无法监督;credibility 改由 URL 域名导出。"),
+         1),
+        t("Duplicate-headline rows: 36,248 (~29%).",
+          "重复标题行:36,248 条(约 29%)。"),
+        (t("→ the same event reported many times; motivates a novelty "
+           "attribute.",
+           "→ 同一事件被反复报道;由此引出 novelty 属性。"), 1),
+        t("Article length: median 3,724 / p90 6,949 / p99 29,925 chars.",
+          "文章长度:中位 3,724 / p90 6,949 / p99 29,925 字符。")], size=11.5)
 
-    # -------------------------------------------------- S7 EDA SCHEMA
-    s = base(t("02  ·  DATA", "02  ·  数据"),
-             t("EDA — Data Findings Drive the Schema",
-               "EDA —— 数据发现驱动 schema 设计"), foot)
+    # ---------------------------------------------------- S8 EDA-2
+    s = base(t("02  ·  DATA ANALYSIS  (2/4)", "02  ·  数据分析  (2/4)"),
+             t("Event-Clue Density — Why Event Extraction",
+               "事件线索密度 —— 为何要做事件抽取"), foot)
+    pic(s, "fig_eda_clues.png", 1.6, 4.3, 7.4, x=0.55)
+    rect(s, 0.55, 5.7, 12.25, 1.25, NAVY, rounded=True)
+    tb(s, 0.9, 5.85, 11.6, 0.95, [{"lh": 1.18, "runs": [{"text": t(
+        "88% of articles carry explicit price-movement language and 77% a "
+        "numeric comparison — the corpus is not diffuse opinion but a stream "
+        "of discrete, typable events. This is the empirical justification for "
+        "structured event extraction over sentiment scoring.",
+        "88% 的文章带明确的价格变动语言、77% 带数值比较 —— 语料不是弥散的观点,"
+        "而是一串离散、可归类的事件。这就是「做结构化事件抽取而非打情感分」的"
+        "实证依据。"), "size": 11.5, "color": WHITE}]}])
+
+    # ---------------------------------------------------- S9 EDA-3
+    s = base(t("02  ·  DATA ANALYSIS  (3/4)", "02  ·  数据分析  (3/4)"),
+             t("Data Findings Drive the Schema", "数据发现驱动 schema 设计"), foot)
     pic(s, "fig_datadriven_map.png", 2.7, 11.6, 3.6)
     tb(s, 0.6, 6.5, 12.15, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [{"text": t(
         "Three measured properties — 29% duplicates, 68–79% missing "
         "provenance, 89% multi-scope — each motivate one event attribute.",
-        "三个实测特性 —— 29% 重复、68–79% 来源缺失、89% 多范围 —— 各自推导出一个事件属性。"),
-        "size": 11, "italic": True, "color": GRAY}]}], align=PP_ALIGN.CENTER)
+        "三个实测特性 —— 29% 重复、68–79% 来源缺失、89% 多范围 —— 各自推导出"
+        "一个事件属性。"), "size": 11, "italic": True, "color": GRAY}]}],
+       align=PP_ALIGN.CENTER)
 
-    # -------------------------------------------------- S8 PHASE 1
+    # ---------------------------------------------------- S10 PHASE 1
     s = base(t("03  ·  METHOD — PHASE 1", "03  ·  方法 — PHASE 1"),
              t("Phase 1 — Structured Event Extraction",
                "Phase 1 —— 结构化事件抽取"), foot)
@@ -364,31 +449,27 @@ def build(lang):
             ("20", t("event types", "事件类型")),
             ("84.8%", t("avg attribute coverage", "平均属性覆盖率")),
             ("FinBERT", t("encoder backbone", "编码器骨干"))]):
-        cx = 0.6 + i * 3.07
-        rect(s, cx, 4.85, 2.9, 1.2, NAVY, rounded=True)
-        tb(s, cx, 5.0, 2.9, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [
-            {"text": big, "size": 18, "bold": True, "color": ORANGE}]}],
-           align=PP_ALIGN.CENTER)
-        tb(s, cx, 5.5, 2.9, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
-            {"text": lb, "size": 10, "color": WHITE}]}], align=PP_ALIGN.CENTER)
+        stat(s, 0.6 + i * 3.07, 4.85, 2.9, big, lb)
 
-    # -------------------------------------------------- S9 EVENT STREAM
-    s = base(t("03  ·  METHOD — PHASE 1", "03  ·  方法 — PHASE 1"),
+    # ---------------------------------------------------- S11 DATA ANALYSIS
+    s = base(t("02  ·  DATA ANALYSIS  (4/4)", "02  ·  数据分析  (4/4)"),
              t("Event Stream — Distribution & Attribute Coverage",
                "事件流 —— 分布与属性覆盖率"), foot)
-    pic(s, "fig_event_dist.png", 1.5, 3.7, 6.3, x=0.55)
-    pic(s, "fig_coverage.png", 1.7, 3.5, 6.1, x=7.0)
-    rect(s, 0.55, 5.55, 12.25, 1.4, NAVY, rounded=True)
-    tb(s, 0.9, 5.7, 11.6, 1.1, [{"lh": 1.18, "runs": [{"text": t(
-        "Event types are long-tailed (top-3 = 55%) → class-aware training. "
-        "Polarity / scope / novelty / credibility reach ~85% coverage and are "
-        "treated as standard attributes; surprise is sparse (6.6%) and treated "
-        "as a high-value indicator.",
-        "事件类型长尾(前三类 55%)→ 需类别感知训练。极性/范围/新颖度/可信度覆盖约 85%,"
-        "作为标准属性;意外度稀疏(6.6%),作为高价值指示器处理。"),
+    pic(s, "fig_event_dist.png", 1.5, 3.6, 6.3, x=0.55)
+    pic(s, "fig_coverage.png", 1.65, 3.45, 6.1, x=7.0)
+    rect(s, 0.55, 5.45, 12.25, 1.5, NAVY, rounded=True)
+    tb(s, 0.9, 5.6, 11.6, 1.2, [{"lh": 1.16, "runs": [{"text": t(
+        "Event types are long-tailed — the top three are 55% of all events, "
+        "so training must be class-aware. Polarity / scope / novelty / "
+        "credibility reach ~85% coverage and are used as standard attributes; "
+        "surprise is sparse (6.6%), treated as a high-value indicator. A "
+        "50-sample audit: 84% type, 78% action, 91% polarity agreement.",
+        "事件类型长尾 —— 前三类占全部事件的 55%,所以训练必须类别感知。极性 / "
+        "范围 / 新颖度 / 可信度覆盖约 85%,作为标准属性;意外度稀疏(6.6%),"
+        "作为高价值指示器。50 样本抽审:类型一致 84%、动作 78%、极性 91%。"),
         "size": 11.5, "color": WHITE}]}])
 
-    # -------------------------------------------------- S10 PHASE 2
+    # ---------------------------------------------------- S12 PHASE 2
     s = base(t("03  ·  METHOD — PHASE 2", "03  ·  方法 — PHASE 2"),
              t("Phase 2 — Lag-Aware Causal Discovery (STACD)",
                "Phase 2 —— 滞后感知因果发现 (STACD)"), foot)
@@ -428,7 +509,7 @@ def build(lang):
         "节点是事件类型而非个股 —— 该图为可解释、可迁移的事件链分析而设计。"),
         "size": 10.5, "italic": True, "color": PALE}]}])
 
-    # -------------------------------------------------- S11 PHASE 3 SETUP
+    # ---------------------------------------------------- S13 PHASE 3 SETUP
     s = base(t("03  ·  METHOD — PHASE 3", "03  ·  方法 — PHASE 3"),
              t("Phase 3 — Problem Setup & Dataset", "Phase 3 —— 问题设定与数据集"),
              foot)
@@ -465,15 +546,9 @@ def build(lang):
             ("9,566", t("ticker-aligned examples", "个股对齐样本")),
             ("22", t("stocks", "只股票")),
             ("2010–2023", t("time span", "时间跨度"))]):
-        cx = 0.6 + i * 4.07
-        rect(s, cx, 4.8, 3.85, 1.2, NAVY, rounded=True)
-        tb(s, cx, 4.95, 3.85, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [
-            {"text": big, "size": 19, "bold": True, "color": ORANGE}]}],
-           align=PP_ALIGN.CENTER)
-        tb(s, cx, 5.47, 3.85, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
-            {"text": lb, "size": 11, "color": WHITE}]}], align=PP_ALIGN.CENTER)
+        stat(s, 0.6 + i * 4.07, 4.8, 3.85, big, lb)
 
-    # -------------------------------------------------- S12 PHASE 3 FEATURES
+    # ---------------------------------------------------- S14 PHASE 3 MODEL
     s = base(t("03  ·  METHOD — PHASE 3", "03  ·  方法 — PHASE 3"),
              t("Phase 3 — Feature Engineering & Model",
                "Phase 3 —— 特征工程与模型"), foot)
@@ -512,7 +587,7 @@ def build(lang):
            "配置:max_iter 150 · learning_rate 0.04 · l2 0.05。"), 0, PALE)],
         size=12.5, gap=9)
 
-    # -------------------------------------------------- S13 KEY RESULT
+    # ---------------------------------------------------- S15 KEY RESULT
     s = base(t("04  ·  EXPERIMENTS", "04  ·  实验"),
              t("Key Result — Stratified vs Chronological",
                "核心结果 —— 分层划分 vs 时间划分"), foot)
@@ -524,17 +599,17 @@ def build(lang):
     bullets(s, 7.25, 2.12, 5.35, 4.2, [
         t("Stratified random — macro-F1 0.693, accuracy 0.728. Well above the "
           "0.43 majority and 0.33 random baselines: the features carry signal.",
-          "分层随机 —— macro-F1 0.693、准确率 0.728。明显高于 0.43 多数类与 0.33 "
-          "随机基线:特征含有效信号。"),
+          "分层随机 —— macro-F1 0.693、准确率 0.728。明显高于 0.43 多数类与 "
+          "0.33 随机基线:特征含有效信号。"),
         t("Chronological — macro-F1 0.337. Near random, consistent with "
           "semi-strong market efficiency: forward-time prediction is hard.",
-          "时间顺序 —— macro-F1 0.337。接近随机,与半强式市场有效一致:前向预测确实难。"),
+          "时间顺序 —— macro-F1 0.337。接近随机,与半强式市场有效一致。"),
         (t("We report both — reporting only the stratified number would "
-           "overstate real-world predictive power.",
+           "overstate real predictive power.",
            "我们两个都报 —— 只报分层那个数会高估真实预测力。"), 1, NAVY)],
         size=12)
 
-    # -------------------------------------------------- S14 ABLATION
+    # ---------------------------------------------------- S16 ABLATION
     s = base(t("04  ·  EXPERIMENTS", "04  ·  实验"),
              t("Ablation — Feature-Group Contribution", "消融实验 —— 各信息源的贡献"),
              foot)
@@ -554,18 +629,19 @@ def build(lang):
     bullets(s, 0.95, 4.6, 11.6, 1.6, [
         t("Adding stock identity lifts macro-F1 from 0.684 to 0.693 — "
           "ticker-specific volatility and reaction patterns remain useful.",
-          "加入股票身份把 macro-F1 从 0.684 提到 0.693 —— 个股特有的波动与反应模式仍有用。"),
+          "加入股票身份把 macro-F1 从 0.684 提到 0.693 —— 个股特有的波动与反应"
+          "模式仍有用。"),
         t("The combined representation is learnable under a stratified split — "
           "it is the configuration we report.",
           "组合表示在分层划分下可学习 —— 这是我们汇报的配置。")], size=12)
 
-    # -------------------------------------------------- S15 COMPARISON
-    s = base(t("04  ·  EXPERIMENTS", "04  ·  实验"),
-             t("Comparison with the NeurIPS 2024 CausalStock",
-               "与 NeurIPS 2024 CausalStock 的对比"), foot)
+    # ---------------------------------------------------- S17 COMPARISON TABLE
+    s = base(t("05  ·  COMPARISON", "05  ·  对比"),
+             t("Comparison with the Baseline — Multi-Axis",
+               "与基线的多维对比"), foot)
     table(s, 0.55, 1.5, 12.25, [
-        [t("Axis", "维度"), t("CausalStock (NeurIPS 2024)", "CausalStock(NeurIPS 2024)"),
-         t("Ours", "我们")],
+        [t("Axis", "维度"), t("CausalStock (NeurIPS 2024)",
+                              "CausalStock(NeurIPS 2024)"), t("Ours", "我们")],
         [t("Causality level", "因果层级"),
          t("Stock-level graph", "个股级图"),
          t("Event-type graph (20×20)", "事件类型级图(20×20)")],
@@ -575,24 +651,69 @@ def build(lang):
         [t("Prediction task", "预测任务"),
          t("Binary up / down", "二分类 涨/跌"),
          t("3-class with a ±0.5% FLAT zone", "三分类,带 ±0.5% FLAT 区")],
-        [t("Evaluation", "评估"),
+        [t("Evaluation protocol", "评估协议"),
          t("Mostly random split", "多为随机划分"),
-         t("Stratified + chronological", "分层 + 时间 双划分")]],
-        [2.8, 4.5, 4.95], fs=11.5, row_h=0.66)
-    rect(s, 0.55, 5.0, 12.25, 1.55, NAVY, rounded=True)
-    tb(s, 0.9, 5.18, 11.6, 0.45, [{"runs": [{"text": t(
-        "Complementary, not competing", "互补,而非竞争"),
-        "size": 13, "bold": True, "color": ORANGE}]}])
-    tb(s, 0.9, 5.58, 11.6, 0.85, [{"lh": 1.18, "runs": [{"text": t(
-        "Event-type causality transfers across companies and markets; "
-        "stock-level causality is bound to a fixed company universe. We "
-        "evaluate on a stricter, dual-split protocol.",
-        "事件类型级因果可跨公司、跨市场迁移;个股级因果绑定在固定股票池。"
-        "我们采用更严格的双划分评估协议。"),
-        "size": 12, "color": WHITE}]}])
+         t("Stratified + chronological", "分层 + 时间 双划分")],
+        [t("Data scale", "数据规模"),
+         t("Larger, multi-dataset", "更大,多数据集"),
+         t("5% FNSPID subset, 22 stocks", "5% FNSPID 子集,22 股")]],
+        [2.6, 4.6, 5.05], fs=11, row_h=0.62)
+    rect(s, 0.55, 5.7, 12.25, 1.0, NAVY, rounded=True)
+    tb(s, 0.9, 5.84, 11.6, 0.75, [{"lh": 1.16, "runs": [{"text": t(
+        "Complementary, not competing — event-type causality transfers across "
+        "companies and markets; stock-level causality is bound to a fixed "
+        "company universe.",
+        "互补而非竞争 —— 事件类型级因果可跨公司、跨市场迁移;个股级因果绑定"
+        "在固定股票池。"), "size": 12, "color": WHITE}]}])
 
-    # -------------------------------------------------- S16 CONCLUSION
-    s = base(t("04  ·  CONCLUSION", "04  ·  结论"),
+    # ---------------------------------------------------- S18 COMPARISON ANALYSIS
+    s = base(t("05  ·  COMPARISON", "05  ·  对比"),
+             t("Comparison — An Interpretable Reading of the Gap",
+               "对比 —— 对差距的可解释分析"), foot)
+    tb(s, 0.6, 1.35, 12, 0.4, [{"runs": [{"text": t(
+        "Our setup is harder and stricter than the baseline's — the gap is "
+        "explainable along four axes:",
+        "我们的设定比基线更难、更严格 —— 差距可沿四个维度解释:"),
+        "size": 12.5, "color": INK}]}])
+    items = [
+        (t("Task", "任务"),
+         t("We predict 3 classes with a ±0.5% FLAT dead zone; the baseline "
+           "predicts binary up/down. FLAT is the hard minority class.",
+           "我们做带 ±0.5% FLAT 死区的三分类;基线是二分类涨/跌。FLAT 是最难的"
+           "少数类。")),
+        (t("Data", "数据"),
+         t("A 5% FNSPID subset over 22 stocks — far smaller; cross-stock "
+           "relational signal is limited at this scale.",
+           "5% FNSPID 子集、22 只股票 —— 规模小得多;此规模下跨股票的关系信号"
+           "有限。")),
+        (t("Protocol", "协议"),
+         t("Our directly comparable number is the chronological one; a random "
+           "split mixes market regimes and inflates apparent performance.",
+           "真正可比的是我们的时间划分数;随机划分混合市场体制,会高估表现。")),
+        (t("Method", "方法"),
+         t("The baseline couples news with a price-derived causal backbone "
+           "end-to-end; our evaluated layer is a transparent tabular model "
+           "over aggregated event statistics — interpretable but lossier.",
+           "基线把新闻与价格导出的因果骨架端到端耦合;我们评测的是聚合事件统计"
+           "上的透明表格模型 —— 可解释但有损。"))]
+    for i, (hd, bd) in enumerate(items):
+        y = 1.85 + i * 1.05
+        rect(s, 0.6, y, 12.15, 0.92, LIGHT, rounded=True)
+        rect(s, 0.6, y, 1.55, 0.92, NAVY)
+        tb(s, 0.6, y + 0.27, 1.55, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
+            {"text": hd, "size": 12.5, "bold": True, "color": ORANGE}]}],
+           align=PP_ALIGN.CENTER)
+        tb(s, 2.35, y + 0.10, 10.2, 0.78, [{"lh": 1.13, "runs": [
+            {"text": bd, "size": 10.8, "color": INK}]}])
+    tb(s, 0.6, 6.2, 12.15, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [{"text": t(
+        "We do not claim to beat the baseline — we contribute a transferable "
+        "event-type formulation and a stricter, honest evaluation.",
+        "我们不声称击败基线 —— 我们的贡献是可迁移的事件类型形式化,以及更严格、"
+        "更诚实的评估。"), "size": 11, "italic": True, "color": GRAY}]}],
+       align=PP_ALIGN.CENTER)
+
+    # ---------------------------------------------------- S19 CONCLUSION
+    s = base(t("05  ·  CONCLUSION", "05  ·  结论"),
              t("Conclusion & Future Work", "总结与未来工作"), foot)
     rect(s, 0.6, 1.5, 6.0, 4.7, LIGHT, rounded=True)
     rect(s, 0.6, 1.5, 6.0, 0.5, GREEN)
@@ -628,13 +749,12 @@ def build(lang):
         "在哪里有用的诚实研究。"),
         "size": 11, "italic": True, "color": GRAY}]}], align=PP_ALIGN.CENTER)
 
-    # -------------------------------------------------- S17 Q&A
+    # ---------------------------------------------------- S20 Q&A
     s = base(t("THANK YOU", "致谢"), "Q & A", foot)
     rect(s, 0.6, 2.4, 12.15, 2.6, NAVY, rounded=True)
     tb(s, 0.6, 3.0, 12.15, 0.7, [{"align": PP_ALIGN.CENTER, "runs": [{"text": t(
-        "Q & A   —   Thank you for listening",
-        "Q & A   —   感谢聆听"), "size": 24, "bold": True, "color": WHITE}]}],
-       align=PP_ALIGN.CENTER)
+        "Q & A   —   Thank you for listening", "Q & A   —   感谢聆听"),
+        "size": 24, "bold": True, "color": WHITE}]}], align=PP_ALIGN.CENTER)
     tb(s, 0.6, 3.85, 12.15, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [{"text":
         "CausalStock  ·  CS173 Data Mining Final  ·  Team 2",
         "size": 13, "color": RGBColor(0x9D, 0xB0, 0xC4)}]}],
