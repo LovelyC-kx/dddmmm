@@ -68,7 +68,7 @@ box(26, y0, 25, h0, NAVY, "Phase 1\nFinBERT Multi-Head\nEvent Extractor\n"
     "→ 10,901 events", fs=8.6, lh=1.35)
 box(55, y0, 22, h0, NAVY, "Phase 2\nSTACD\nLag-Aware\nCausal Discovery", fs=8.6, lh=1.35)
 box(81, y0, 28, h0, NAVY, "Phase 3\nFeature stack →\nHistGradientBoosting\n"
-    "+ causal ensemble", fs=8.6, lh=1.35)
+    "tabular prediction", fs=8.6, lh=1.35)
 box(113, y0, 25, h0, "#fff8ec", "", ec=ORANGE)
 cap(125.5, y0 + h0 - 1.6, "Next-day movement", fs=8.6, color=INK, bold=True, it=False)
 for k, (t, c) in enumerate([("UP", GREEN), ("DOWN", RED), ("FLAT", GRAY)]):
@@ -118,13 +118,13 @@ cap(96, 15.2, "returns · volatility · log-volume · OHLCV", fs=7.6, color=GRAY
 arrow(96, 41, 96, 35.2, color=GRAY, lw=1.6)
 
 # ---------------- result tags ----------------
-box(8, 3, 58, 5.4, "#e3f1ea", "Stratified split:  0.709 macro-F1   "
-    "(tabular 0.693 → ensemble 0.709)", tc=INK, fs=8.6, ec=GREEN, rs=0.6, shadow=False)
+box(8, 3, 58, 5.4, "#e3f1ea", "Stratified split:  0.693 macro-F1   "
+    "(price + events + stock, HGB)", tc=INK, fs=8.6, ec=GREEN, rs=0.6, shadow=False)
 box(72, 3, 60, 5.4, "#f7e2dd", "Chronological split:  0.337 macro-F1   "
     "≈ random 0.333  (honest forward-time gap)", tc=INK, fs=8.6, ec=RED, rs=0.6,
     shadow=False)
-cap(70, 0.6, "Architecture as designed.  Phase 2's graph and the Phase-3 ODE are "
-    "reported as diagnosed negative results — see paper.", fs=7.8, color=GRAY)
+cap(70, 0.6, "Architecture as designed; the evaluated predictor is the tabular "
+    "gradient-boosting model. See the report for full results.", fs=7.8, color=GRAY)
 
 plt.savefig(OUT / "fig_architecture.png")
 print("saved fig_architecture.png")

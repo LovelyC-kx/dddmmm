@@ -1,8 +1,11 @@
 """Build the CausalStock CS173 final-presentation deck (16:9).
 
-Rebuilds the deck from corrected content: CausalStock naming, comparison +
-data front-loaded, real ablation numbers, ODE demoted, honest causal-graph
-slide. Figures are pulled from ../figures (run make_deck_figures.py first).
+Content follows the final report (docs/final-report/report.tex): the
+three-stage framework, the EDA-driven schema, the tabular prediction layer,
+and the stratified-vs-chronological result. No ODE, no 0.709 ensemble, no
+negative-result slide — the deck and the report tell one story.
+
+Opening funnel: prior-method problems -> what we change -> the pipeline.
 
   python docs/final-deck/build_deck.py
 """
@@ -172,15 +175,12 @@ tb(s, 0.9, 0.95, 12, 0.4, [{"runs": [
     {"text": "CS173  ·  DATA MINING  ·  FINAL PROJECT", "size": 13,
      "bold": True, "color": ORANGE}]}])
 tb(s, 0.86, 1.35, 12, 1.4, [{"runs": [
-    {"text": "CausalStock", "size": 66, "bold": True, "color": WHITE}]}])
-tb(s, 0.9, 2.45, 12, 0.6, [{"runs": [
-    {"text": "Structured Event-Chain Modeling for News-Driven Stock Prediction",
-     "size": 21, "color": RGBColor(0xC9, 0xD6, 0xE3)}]}])
-tb(s, 0.9, 3.25, 12, 0.5, [{"runs": [
-    {"text": "数据驱动的结构化事件链建模", "size": 16,
-     "color": RGBColor(0x9D, 0xB0, 0xC4)}]}])
+    {"text": "CausalStock", "size": 64, "bold": True, "color": WHITE}]}])
+tb(s, 0.9, 2.42, 12, 0.6, [{"runs": [
+    {"text": "Event-Structured Temporal Causal Modeling for News-Driven "
+     "Stock Prediction", "size": 19, "color": RGBColor(0xC9, 0xD6, 0xE3)}]}])
 cards = [("Data-driven", "3 EDA findings  →  3 new event attributes"),
-         ("Interpretable", "structured events + transparent tabular model"),
+         ("Structured", "20-class events instead of one sentiment score"),
          ("Honest", "stratified + chronological dual reporting")]
 for i, (hd, bd) in enumerate(cards):
     cx = 0.9 + i * 3.95
@@ -195,35 +195,168 @@ tb(s, 0.9, 6.4, 12, 0.4, [{"runs": [
 
 # ============================================================ S2  AGENDA
 s = base("AGENDA", "Roadmap")
-ag = [("01", "Data & Problem", "FNSPID task; the CausalStock (NeurIPS'24) baseline and its gap"),
-      ("02", "EDA", "Missingness, headline duplication, event-clue density"),
-      ("03", "Method", "Structured events + lag-aware event-type causal discovery"),
-      ("04", "Experiments", "Attribute coverage, ablation, stratified vs chronological"),
-      ("05", "Discussion", "Limits, what we learned, future work")]
+ag = [("01", "Problem & Innovation", "What prior methods get wrong, and the three "
+       "things we change"),
+      ("02", "Framework & Data", "The three-stage pipeline; exploratory data "
+       "analysis that drives the schema"),
+      ("03", "Method", "Phase 1 event extraction · Phase 2 causal discovery · "
+       "Phase 3 prediction"),
+      ("04", "Experiments & Conclusion", "Results, ablation, comparison, and an "
+       "honest read")]
 for i, (no, hd, bd) in enumerate(ag):
-    y = 1.5 + i * 1.07
+    y = 1.7 + i * 1.25
     tb(s, 0.7, y, 1.0, 0.8, [{"runs": [
         {"text": no, "size": 30, "bold": True, "color": RGBColor(0xD9, 0xE2, 0xEC)}]}])
-    rect(s, 1.85, y + 0.07, 0.06, 0.62, ORANGE)
+    rect(s, 1.85, y + 0.07, 0.06, 0.7, ORANGE)
     tb(s, 2.15, y, 10.5, 0.5, [{"runs": [
         {"text": hd, "size": 19, "bold": True, "color": NAVY}]}])
-    tb(s, 2.15, y + 0.46, 10.5, 0.4, [{"runs": [
+    tb(s, 2.15, y + 0.46, 10.6, 0.5, [{"lh": 1.1, "runs": [
         {"text": bd, "size": 12.5, "color": GRAY}]}])
 
 # ============================================================ S3  PROBLEM
-s = base("01  ·  PROBLEM", "Task: News-Driven Stock Movement Prediction")
-rect(s, 0.6, 1.45, 6.0, 3.0, LIGHT, rounded=True)
+s = base("01  ·  PROBLEM", "What Prior Methods Get Wrong")
+tb(s, 0.6, 1.35, 12, 0.4, [{"runs": [
+    {"text": "Most news-driven models compress each article into one sentiment "
+     "score. Three things break:", "size": 13, "color": INK}]}])
+probs = [("Information Loss",
+          "A single sentiment score discards the event's type, magnitude, and "
+          "affected entity.",
+          "\"Apple launches a new iPhone, outlook +20%\"  →  sentiment +0.8"),
+         ("Lack of Causality",
+          "Models capture surface correlation, not the logic between events, and "
+          "cannot explain a prediction.",
+          "Cannot tell a rate hike acting directly vs. via lowered earnings."),
+         ("Ignoring Temporal Dynamics",
+          "A news impact is treated as instantaneous — missing lag, diffusion, "
+          "and gradual effects.",
+          "A policy change may surface in prices only days or weeks later.")]
+for i, (hd, bd, eg) in enumerate(probs):
+    y = 1.95 + i * 1.62
+    rect(s, 0.6, y, 12.15, 1.42, LIGHT, rounded=True)
+    rect(s, 0.6, y, 0.14, 1.42, RED)
+    tb(s, 0.95, y + 0.12, 3.4, 0.5, [{"runs": [
+        {"text": f"{i+1}.  {hd}", "size": 15, "bold": True, "color": NAVY}]}])
+    tb(s, 0.95, y + 0.52, 7.9, 0.85, [{"lh": 1.12, "runs": [
+        {"text": bd, "size": 11.5, "color": INK}]}])
+    tb(s, 9.0, y + 0.2, 3.55, 1.05, [{"lh": 1.15, "runs": [
+        {"text": eg, "size": 9.5, "italic": True, "color": GRAY}]}])
+
+# ============================================================ S4  WHAT WE CHANGE
+s = base("01  ·  INNOVATION", "What We Change — Three Innovations")
+tb(s, 0.6, 1.35, 12, 0.4, [{"runs": [
+    {"text": "Each prior-method problem maps to one design change in CausalStock:",
+     "size": 13, "color": INK}]}])
+table(s, 0.6, 1.85, 12.15, [
+    ["Prior-method problem", "CausalStock innovation"],
+    ["Information loss (sentiment scalar)",
+     "Structured event:  (subject, action, object, magnitude) + impact profile"],
+    ["Lack of causality",
+     "Lag-aware causal discovery over 20 event types  —  a transferable graph"],
+    ["Ignoring temporal dynamics",
+     "A learned lag matrix T_lag and lag-gated attention"]],
+    [5.6, 6.55], fs=12.5, row_h=0.72)
+rect(s, 0.6, 5.05, 12.15, 1.6, NAVY, rounded=True)
+tb(s, 0.95, 5.22, 11.6, 0.45, [{"runs": [
+    {"text": "Two principles cut across all three:", "size": 13, "bold": True,
+     "color": ORANGE}]}])
+tb(s, 0.95, 5.62, 11.6, 0.95, [{"lh": 1.2, "runs": [{"text":
+    "Data-driven — the event schema is earned from a measured EDA of the corpus, "
+    "not assumed.   Honest — every result is reported under both a stratified and "
+    "a chronological split.", "size": 12.5, "color": WHITE}]}])
+
+# ============================================================ S5  PIPELINE
+s = base("01  ·  FRAMEWORK", "End-to-End Pipeline")
+pic(s, "fig_architecture.png", 1.45, 5.5, 12.5)
+tb(s, 0.6, 6.95, 12, 0.35, [{"align": PP_ALIGN.CENTER, "runs": [
+    {"text": "Three stages: extract structured events, learn lag-aware event-type "
+     "structure, predict with a transparent tabular model.", "size": 10.5,
+     "italic": True, "color": GRAY}]}], align=PP_ALIGN.CENTER)
+
+# ============================================================ S6  EDA
+s = base("02  ·  DATA", "Exploratory Data Analysis — The Data Drives the Schema")
+pic(s, "fig_datadriven_map.png", 3.0, 11.6, 3.4)
+rect(s, 0.6, 1.5, 12.15, 1.35, LIGHT, rounded=True)
+tb(s, 0.9, 1.62, 11.6, 0.4, [{"runs": [
+    {"text": "We profiled the raw FNSPID 5% subset before fixing the schema:",
+     "size": 12.5, "bold": True, "color": NAVY}]}])
+tb(s, 0.9, 2.02, 11.6, 0.75, [{"lh": 1.15, "runs": [{"text":
+    "88% of articles carry price-movement language and 77% a numeric comparison — "
+    "the corpus is event-dense, so structured event extraction is justified over "
+    "sentiment scoring. Three further findings each motivate one attribute:",
+    "size": 11.5, "color": INK}]}])
+
+# ============================================================ S7  PHASE 1
+s = base("03  ·  METHOD — PHASE 1", "Phase 1 — Structured Event Extraction")
+rect(s, 0.6, 1.45, 6.05, 3.0, LIGHT, rounded=True)
 tb(s, 0.85, 1.6, 5.6, 0.4, [{"runs": [
-    {"text": "SETUP", "size": 13, "bold": True, "color": ORANGE}]}])
+    {"text": "STRUCTURED EVENT", "size": 12.5, "bold": True, "color": ORANGE}]}])
+bullets(s, 0.85, 2.05, 5.6, 2.3, [
+    "e = (type, subject, object, magnitude)",
+    "20-class event ontology (Macro / Corporate / Knowledge / Geopolitical)",
+    "+ impact profile: polarity, surprise, scope, novelty, credibility"], size=12.5)
+rect(s, 6.8, 1.45, 5.95, 3.0, LIGHT, rounded=True)
+tb(s, 7.05, 1.6, 5.5, 0.4, [{"runs": [
+    {"text": "FinBERT + MULTI-HEAD DECODER", "size": 12.5, "bold": True,
+     "color": ORANGE}]}])
+bullets(s, 7.05, 2.05, 5.5, 2.3, [
+    "Encoder: ProsusAI/finbert for financial text",
+    "Three heads: event-type, argument spans, magnitude",
+    "Weak supervision: LLM silver labels + rule/market corrections"], size=12.5)
+for i, (big, lb) in enumerate([("10,901", "structured events"), ("20", "event types"),
+                               ("84.8%", "avg attribute coverage"),
+                               ("ProsusAI", "finbert encoder")]):
+    cx = 0.6 + i * 3.07
+    rect(s, cx, 4.85, 2.9, 1.2, NAVY, rounded=True)
+    tb(s, cx, 5.0, 2.9, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [
+        {"text": big, "size": 18, "bold": True, "color": ORANGE}]}],
+       align=PP_ALIGN.CENTER)
+    tb(s, cx, 5.5, 2.9, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
+        {"text": lb, "size": 10.5, "color": WHITE}]}], align=PP_ALIGN.CENTER)
+
+# ============================================================ S8  PHASE 2
+s = base("03  ·  METHOD — PHASE 2", "Phase 2 — Lag-Aware Causal Discovery (STACD)")
+rect(s, 0.6, 1.45, 5.7, 4.8, LIGHT, rounded=True)
+tb(s, 0.85, 1.6, 5.3, 0.4, [{"runs": [
+    {"text": "GOAL — TWO MATRICES", "size": 12.5, "bold": True, "color": ORANGE}]}])
+bullets(s, 0.85, 2.0, 5.25, 1.5, [
+    "A ∈ (0,1)²⁰ˣ²⁰ — directed event-type strength",
+    "T_lag — expected lag, in days"], size=12)
+tb(s, 0.85, 3.25, 5.3, 0.4, [{"runs": [
+    {"text": "MECHANISM — STACD", "size": 12.5, "bold": True, "color": ORANGE}]}])
+bullets(s, 0.85, 3.65, 5.25, 2.4, [
+    "Sparse temporal attention",
+    "Time-direction mask — only past attends to future",
+    "Lag-aware Gaussian gate + causal-strength gate",
+    "NOTEARS-style acyclicity (DAG) regularizer"], size=12)
+rect(s, 6.55, 1.45, 6.2, 4.8, NAVY, rounded=True)
+tb(s, 6.85, 1.62, 5.7, 0.4, [{"runs": [
+    {"text": "ATTENTION MODULATION", "size": 12.5, "bold": True, "color": ORANGE}]}])
+for i, eq in enumerate([
+    "g_ij = exp( −(|t_i−t_j| − T_lag[k_j,k_i])² / 2σ² )",
+    "s̃_ij = s_ij + log m_ij + log g_ij + log A[k_j,k_i]",
+    "α_ij = softmax_j ( s̃_ij )",
+    "L = L_pred + λ₁‖A‖₁ + λ_DAG · h(A)²"]):
+    tb(s, 6.95, 2.2 + i * 0.66, 5.6, 0.5, [{"runs": [
+        {"text": eq, "size": 12, "color": WHITE, "font": "Consolas"}]}])
+tb(s, 6.95, 5.0, 5.6, 1.1, [{"lh": 1.2, "runs": [{"text":
+    "Nodes are event types, not stocks — the resulting graph is designed to "
+    "support interpretable, transferable event-chain analysis.", "size": 10.5,
+    "italic": True, "color": RGBColor(0xC9, 0xD6, 0xE3)}]}])
+
+# ============================================================ S9  PHASE 3 SETUP
+s = base("03  ·  METHOD — PHASE 3", "Phase 3 — Problem Setup & Dataset")
+rect(s, 0.6, 1.45, 6.0, 3.05, LIGHT, rounded=True)
+tb(s, 0.85, 1.6, 5.6, 0.4, [{"runs": [
+    {"text": "INPUTS  →  OUTPUT", "size": 13, "bold": True, "color": ORANGE}]}])
 bullets(s, 0.85, 2.05, 5.6, 2.4, [
-    "Input:  32 recent events  +  30-day OHLCV  +  ticker ID",
-    "Output:  next-day direction  —  UP / DOWN / FLAT",
-    "Decision threshold  δ = 0.5%",
-    "Dataset:  5% FNSPID subset  ·  22 stocks  ·  2010–2023"], size=13.5)
-rect(s, 6.85, 1.45, 5.9, 3.0, LIGHT, rounded=True)
+    "32 recent news events",
+    "30-day OHLCV price window",
+    "Target stock identity",
+    "Output: next-day direction, threshold ±0.5%"], size=13)
+rect(s, 6.85, 1.45, 5.9, 3.05, LIGHT, rounded=True)
 tb(s, 7.1, 1.6, 5.5, 0.4, [{"runs": [
-    {"text": "CLASS DISTRIBUTION (3-class, imbalanced)", "size": 13,
-     "bold": True, "color": ORANGE}]}])
+    {"text": "THREE-CLASS DISTRIBUTION", "size": 13, "bold": True,
+     "color": ORANGE}]}])
 for i, (lb, pc, cl) in enumerate([("UP", "39.4%", GREEN), ("DOWN", "43.3%", RED),
                                    ("FLAT", "17.3%", GRAY)]):
     cx = 7.15 + i * 1.92
@@ -235,345 +368,153 @@ for i, (lb, pc, cl) in enumerate([("UP", "39.4%", GREEN), ("DOWN", "43.3%", RED)
         {"text": lb, "size": 13, "bold": True, "color": INK}]}],
        align=PP_ALIGN.CENTER)
 tb(s, 7.1, 3.95, 5.5, 0.4, [{"runs": [
-    {"text": "FLAT is the hard minority class — central to the honest evaluation.",
+    {"text": "FLAT is the minority class — macro-F1 is emphasized.",
      "size": 10.5, "italic": True, "color": GRAY}]}])
-rect(s, 0.6, 4.7, 12.15, 1.55, NAVY, rounded=True)
-tb(s, 0.95, 4.9, 11.6, 0.45, [{"runs": [
-    {"text": "Why it is hard", "size": 14, "bold": True, "color": ORANGE}]}])
-tb(s, 0.95, 5.3, 11.6, 0.85, [{"lh": 1.15, "runs": [{"text":
-    "A news item is not a standalone signal: a rate hike triggers a chain — credit "
-    "tightening → tech-sector revaluation → supply-chain cooling — over hours to "
-    "weeks. Sentiment scores collapse this structure.", "size": 12.5,
-    "color": WHITE}]}])
-
-# ============================================================ S4  BASELINE
-s = base("01  ·  BASELINE", "Baseline — CausalStock (NeurIPS 2024)")
-tb(s, 0.6, 1.4, 12, 0.4, [{"runs": [
-    {"text": "What it does", "size": 14, "bold": True, "color": ORANGE}]}])
-for i, (hd, bd) in enumerate([
-    ("Denoised news encoder",
-     "An LLM compresses each article into one dense embedding vector."),
-    ("Stock-level causal graph",
-     "Lag-dependent causality is learned between stocks (s₁ ↔ s₂).")]):
-    chip(s, 0.6 + i * 6.15, 1.8, 5.85, 1.15, hd, bd)
-tb(s, 0.6, 3.2, 12, 0.4, [{"runs": [
-    {"text": "Two blind spots — and our response", "size": 14, "bold": True,
-     "color": ORANGE}]}])
-table(s, 0.6, 3.6, 12.15, [
-    ["Baseline blind spot", "CausalStock response"],
-    ["One vector per article hides event type, magnitude, affected entity",
-     "Structured event:  (S, A, O, M)  +  impact profile"],
-    ["Stock-level graph cannot say what kind of event drove a link",
-     "Causal graph over 20 event types, transferable across firms"]],
-    [6.07, 6.08], fs=12.5, row_h=0.62)
-rect(s, 0.6, 5.75, 12.15, 0.95, CREAM, rounded=True)
-tb(s, 0.95, 5.92, 11.5, 0.65, [{"lh": 1.12, "runs": [
-    {"text": "Takeaway:  ", "size": 12.5, "bold": True, "color": NAVY},
-    {"text": "the baseline is strong but structure-blind — CausalStock restores "
-     "event structure and moves causality to the transferable event-type level.",
-     "size": 12.5, "color": INK}]}])
-
-# ============================================================ S5  COMPARE
-s = base("01  ·  POSITIONING", "Positioning — Ours vs the NeurIPS 2024 Baseline")
-table(s, 0.55, 1.45, 12.25, [
-    ["Dimension", "CausalStock (NeurIPS 2024)", "Ours", "Data evidence"],
-    ["News representation", "Denoised dense embedding",
-     "(S,A,O,M) + impact profile", "88% price / 77% numeric cues"],
-    ["Causal graph nodes", "Stock-level  (22×22)",
-     "Event-type level  (20×20)", "long-tailed event distribution"],
-    ["Source trust", "—", "URL-domain credibility",
-     "Publisher 79% / Author 68% missing"],
-    ["Repetition", "—", "Novelty attribute", "29% duplicate headlines"],
-    ["Multi-stock news", "implicit", "explicit Scope attribute",
-     "89.2% multi-scope cues"],
-    ["Evaluation", "mostly random split", "stratified + chronological",
-     "0.69 → 0.34 temporal drift"]],
-    [2.5, 3.05, 3.2, 3.5], fs=11.5, row_h=0.6)
-rect(s, 0.55, 6.05, 12.25, 0.92, NAVY, rounded=True)
-tb(s, 0.9, 6.24, 11.6, 0.6, [{"runs": [
-    {"text": "Core claim:  ", "size": 13, "bold": True, "color": ORANGE},
-    {"text": "every method choice in CausalStock is justified by a specific, "
-     "measured finding in the FNSPID data.", "size": 13, "color": WHITE}]}])
-
-# ============================================================ S6  EDA-1
-s = base("02  ·  EDA  (1/2)", "Dataset Snapshot & Missingness Audit")
-for i, (big, lb) in enumerate([("10,901", "structured events"),
-                               ("9,566", "ticker-aligned examples"),
-                               ("22", "stocks"), ("2010–23", "time span")]):
-    cx = 0.6 + i * 1.62
-    rect(s, cx, 1.45, 1.5, 1.0, LIGHT, rounded=True)
-    tb(s, cx, 1.56, 1.5, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [
-        {"text": big, "size": 17, "bold": True, "color": NAVY}]}],
+for i, (big, lb) in enumerate([("9,566", "ticker-aligned examples"),
+                               ("22", "stocks"), ("2010–2023", "time span")]):
+    cx = 0.6 + i * 4.07
+    rect(s, cx, 4.8, 3.85, 1.2, NAVY, rounded=True)
+    tb(s, cx, 4.95, 3.85, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [
+        {"text": big, "size": 19, "bold": True, "color": ORANGE}]}],
        align=PP_ALIGN.CENTER)
-    tb(s, cx, 2.04, 1.5, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
-        {"text": lb, "size": 9, "color": GRAY}]}], align=PP_ALIGN.CENTER)
-pic(s, "fig_eda_missing.png", 2.65, 6.2, 3.6, x=0.6)
-rect(s, 7.5, 1.45, 5.3, 4.7, LIGHT, rounded=True)
-tb(s, 7.75, 1.6, 4.9, 0.4, [{"runs": [
-    {"text": "OBSERVATIONS", "size": 13, "bold": True, "color": ORANGE}]}])
-bullets(s, 7.75, 2.05, 4.85, 4.0, [
-    "Publisher 79% / Author 68% missing — cannot be used as supervision.",
-    "URL missing only 0.02% — a clean, near-complete signal.",
-    ("→ derive a credibility score from the URL domain", 1),
-    "Duplicate headlines 29.0% — the same event reported many times.",
-    ("→ first report carries peak impact; repeats decay → novelty", 1)], size=12.5)
-
-# ============================================================ S7  EDA-2
-s = base("02  ·  EDA  (2/2)", "Event Density & Long-Tailed Distribution")
-pic(s, "fig_eda_clues.png", 1.4, 4.3, 6.2, x=0.55)
-pic(s, "fig_event_dist.png", 1.4, 4.3, 6.4, x=6.7)
-rect(s, 0.55, 5.95, 12.25, 1.0, NAVY, rounded=True)
-tb(s, 0.9, 6.07, 11.6, 0.8, [
-    {"sa": 2, "runs": [{"text": "Two design drivers:", "size": 12.5,
-                        "bold": True, "color": ORANGE}]},
-    {"lh": 1.12, "runs": [{"text":
-        "(1)  the corpus is event-dense (88% price, 77% numeric cues) → a "
-        "structured event representation is justified over sentiment;   "
-        "(2)  event types are long-tailed (top-3 = 55%) → class-aware training.",
-        "size": 11.5, "color": WHITE}]}])
-
-# ============================================================ S8  INNOVATION
-s = base("02  ·  FROM DATA TO DESIGN", "The Innovation — Three Findings, Three Attributes")
-pic(s, "fig_datadriven_map.png", 1.5, 4.5, 11.6)
-rect(s, 0.8, 6.25, 11.7, 0.82, CREAM, rounded=True)
-tb(s, 1.1, 6.41, 11.2, 0.55, [{"runs": [
-    {"text": "Not bolted on:  ", "size": 12.5, "bold": True, "color": NAVY},
-    {"text": "novelty, credibility and scope are each earned from a measured "
-     "property of the FNSPID corpus.", "size": 12.5, "color": INK}]}])
-
-# ============================================================ S9  FRAMEWORK
-s = base("03  ·  METHOD", "End-to-End Framework")
-pic(s, "fig_architecture.png", 1.35, 5.6, 12.5)
-
-# ============================================================ S10  PHASE 1
-s = base("03  ·  METHOD — PHASE 1", "Structured Event Extraction")
-rect(s, 0.6, 1.45, 6.05, 3.05, LIGHT, rounded=True)
-tb(s, 0.85, 1.6, 5.6, 0.4, [{"runs": [
-    {"text": "EXTRACTOR — FinBERT + multi-head decoder", "size": 12.5,
-     "bold": True, "color": ORANGE}]}])
-bullets(s, 0.85, 2.05, 5.6, 2.4, [
-    "Type head — 20-way event-type softmax",
-    "Span heads — subject / object boundaries",
-    "Magnitude head — scalar event intensity",
-    "Aux heads — scope / novelty / credibility"], size=12.5)
-rect(s, 6.8, 1.45, 5.95, 3.05, LIGHT, rounded=True)
-tb(s, 7.05, 1.6, 5.5, 0.4, [{"runs": [
-    {"text": "WEAK SUPERVISION + HYBRID CORRECTION", "size": 12.5,
-     "bold": True, "color": ORANGE}]}])
-bullets(s, 7.05, 2.05, 5.5, 2.4, [
-    "Silver labels from GPT-4 / DeepSeek",
-    "Rule correction for surprise:  (actual − expected) / |expected|",
-    "Novelty from sentence-embedding similarity",
-    "Credibility from a URL-domain whitelist"], size=12.5)
-tb(s, 0.6, 4.7, 12, 0.4, [{"runs": [
-    {"text": "Event  =  (Subject, Action, Object, Magnitude)  +  impact profile "
-     "{ polarity, surprise, scope, novelty, credibility }", "size": 13,
-     "bold": True, "color": NAVY}]}])
-for i, (big, lb) in enumerate([("10,901", "events extracted"), ("20", "event types"),
-                               ("4", "decoder heads"), ("84.8%", "avg attr. coverage")]):
-    cx = 0.6 + i * 3.07
-    rect(s, cx, 5.2, 2.9, 1.15, NAVY, rounded=True)
-    tb(s, cx, 5.34, 2.9, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [
-        {"text": big, "size": 20, "bold": True, "color": ORANGE}]}],
-       align=PP_ALIGN.CENTER)
-    tb(s, cx, 5.86, 2.9, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
+    tb(s, cx, 5.47, 3.85, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
         {"text": lb, "size": 11, "color": WHITE}]}], align=PP_ALIGN.CENTER)
 
-# ============================================================ S11  ATTRS
-s = base("03  ·  METHOD — PHASE 1", "The Three Data-Driven Attributes")
-defs = [("Novelty", "novelty = 1 − max sim(textᵢ, recent same-ticker news)",
-         "Decays the weight of repeated reporting; novel = 1.", GREEN),
-        ("Credibility", "credibility = score( domain(URLᵢ) )",
-         "3-tier domain whitelist; robust to missing Publisher / Author.", BLUE),
-        ("Scope", "scope ∈ { single, sector, market, global }",
-         "Down-weights ticker assignment when news is not single-stock.", ORANGE)]
-for i, (hd, eq, bd, cl) in enumerate(defs):
-    y = 1.5 + i * 1.72
-    rect(s, 0.6, y, 12.15, 1.5, LIGHT, rounded=True)
-    rect(s, 0.6, y, 0.14, 1.5, cl)
-    tb(s, 0.95, y + 0.13, 3.0, 0.5, [{"runs": [
-        {"text": hd, "size": 18, "bold": True, "color": NAVY}]}])
-    tb(s, 0.95, y + 0.62, 5.4, 0.8, [{"lh": 1.1, "runs": [
-        {"text": bd, "size": 11.5, "color": INK}]}])
-    rect(s, 6.5, y + 0.42, 6.0, 0.66, WHITE, rounded=True)
-    tb(s, 6.7, y + 0.55, 5.7, 0.5, [{"runs": [
-        {"text": eq, "size": 12, "bold": True, "color": INK, "font": "Consolas"}]}])
-
-# ============================================================ S12  PHASE 2
-s = base("03  ·  METHOD — PHASE 2", "Lag-Aware Event-Type Causal Discovery (STACD)")
-rect(s, 0.6, 1.45, 5.7, 4.7, LIGHT, rounded=True)
-tb(s, 0.85, 1.6, 5.3, 0.4, [{"runs": [
-    {"text": "OBJECTIVE", "size": 12.5, "bold": True, "color": ORANGE}]}])
-bullets(s, 0.85, 2.0, 5.25, 1.5, [
-    "A ∈ (0,1)²⁰ˣ²⁰ — directed event-type strength",
-    "T_lag ∈ ℝ₊²⁰ˣ²⁰ — expected delay (days)"], size=12)
-tb(s, 0.85, 3.15, 5.3, 0.4, [{"runs": [
-    {"text": "DESIGN CHOICES", "size": 12.5, "bold": True, "color": ORANGE}]}])
-bullets(s, 0.85, 3.5, 5.25, 2.5, [
-    "Time-direction mask — only past attends to future",
-    "Gaussian lag gate — attention peaks at the learned lag",
-    "Causal-strength gate — type-pair prior in log-space",
-    "DAG regularization — NOTEARS acyclicity"], size=12)
-rect(s, 6.55, 1.45, 6.2, 4.7, NAVY, rounded=True)
-tb(s, 6.85, 1.62, 5.7, 0.4, [{"runs": [
-    {"text": "MECHANISM — sparse temporal attention", "size": 12.5,
-     "bold": True, "color": ORANGE}]}])
-for i, eq in enumerate([
-    "gᵢⱼ = exp( −(|tᵢ−tⱼ| − T_lag[kⱼ,kᵢ])² / 2σ² )",
-    "s̃ᵢⱼ = sᵢⱼ + log mᵢⱼ + log gᵢⱼ + log A[kⱼ,kᵢ]",
-    "αᵢⱼ = softmaxⱼ ( s̃ᵢⱼ )",
-    "L = L_pred + λ₁‖A‖₁ + λ_DAG · h(A)²",
-    "h(A) = tr( e^{A⊙A} ) − K        (NOTEARS)"]):
-    tb(s, 6.95, 2.15 + i * 0.62, 5.6, 0.5, [{"runs": [
-        {"text": eq, "size": 12.5, "color": WHITE, "font": "Consolas"}]}])
-tb(s, 6.95, 5.45, 5.6, 0.55, [{"lh": 1.1, "runs": [{"text":
-    "Nodes are event types, not stocks — the graph transfers across companies.",
-    "size": 10.5, "italic": True, "color": RGBColor(0xC9, 0xD6, 0xE3)}]}])
-
-# ============================================================ S13  GRAPH (honest)
-s = base("03  ·  METHOD — PHASE 2", "Phase 2 Result — The Causal Graph Did Not Learn")
-tb(s, 0.6, 1.35, 12, 0.4, [{"runs": [
-    {"text": "STACD trained 12 epochs on 9,527 real event sequences — a clear, "
-     "honestly-reported negative result:", "size": 12.5, "color": INK}]}])
-pic(s, "fig_causal_matrix.png", 1.95, 3.55, 7.6, x=0.5)
-rect(s, 8.3, 1.85, 4.5, 4.45, LIGHT, rounded=True)
-tb(s, 8.55, 2.0, 4.05, 0.4, [{"runs": [
-    {"text": "DIAGNOSED NEGATIVE RESULT", "size": 12, "bold": True, "color": RED}]}])
-bullets(s, 8.55, 2.45, 4.1, 3.8, [
-    "Trained A: mean 0.267, std 0.048 — identical to its initialization (0.269 / 0.048).",
-    "Across 12 epochs A barely moves (mean change 0.005 per entry).",
-    "STACD prediction head ≈ 0.5 (random) — almost no gradient reaches the graph.",
-    ("→ same weak forward signal as the chronological collapse", 1, True, NAVY)],
-    size=11)
-rect(s, 0.6, 6.4, 12.2, 0.72, CREAM, rounded=True)
-tb(s, 0.9, 6.54, 11.6, 0.5, [{"runs": [
-    {"text": "Honest takeaway:  ", "size": 11.5, "bold": True, "color": NAVY},
-    {"text": "end-to-end causal discovery is not identifiable on a low-signal "
-     "target — next step: estimate the graph from observed lagged co-occurrence.",
-     "size": 11.5, "color": INK}]}])
-
-# ============================================================ S14  PHASE 3
-s = base("03  ·  METHOD — PHASE 3", "Prediction Layer")
-rect(s, 0.6, 1.45, 12.15, 1.5, LIGHT, rounded=True)
+# ============================================================ S10  PHASE 3 MODEL
+s = base("03  ·  METHOD — PHASE 3", "Phase 3 — Feature Engineering & Model")
+rect(s, 0.6, 1.45, 12.15, 1.4, LIGHT, rounded=True)
 tb(s, 0.85, 1.58, 11.6, 0.4, [{"runs": [
-    {"text": "FEATURE STACK  —  132-dimensional vector", "size": 12.5,
-     "bold": True, "color": ORANGE}]}])
+    {"text": "x = [ price ‖ event ‖ stock-ID ]   —   a 132-dimensional vector",
+     "size": 13, "bold": True, "color": ORANGE}]}])
 for i, (d, lb) in enumerate([("Price  28-d", "returns, volatility, log-volume, OHLC"),
                              ("Event  82-d", "type counts, signed/abs magnitude, last type"),
                              ("Stock  22-d", "one-hot ticker identity")]):
     cx = 0.85 + i * 4.0
-    tb(s, cx, 2.0, 3.8, 0.4, [{"runs": [
+    tb(s, cx, 1.98, 3.8, 0.4, [{"runs": [
         {"text": d, "size": 13, "bold": True, "color": NAVY}]}])
-    tb(s, cx, 2.36, 3.8, 0.5, [{"lh": 1.05, "runs": [
+    tb(s, cx, 2.34, 3.8, 0.5, [{"lh": 1.05, "runs": [
         {"text": lb, "size": 10, "color": GRAY}]}])
-rect(s, 0.6, 3.2, 5.95, 2.95, LIGHT, rounded=True)
-tb(s, 0.85, 3.35, 5.5, 0.4, [{"runs": [
-    {"text": "WHY HISTGRADIENTBOOSTING", "size": 12.5, "bold": True,
-     "color": ORANGE}]}])
-bullets(s, 0.85, 3.75, 5.45, 2.3, [
-    "Handles heterogeneous features (counts, ratios, one-hots)",
-    "Strong yet transparent — readable vs heavy neural nets",
-    "Scale-invariant tree splits — no feature scaling",
-    "max_iter 150 · lr 0.04 · L2 0.05"], size=12)
-rect(s, 6.8, 3.2, 5.95, 2.95, NAVY, rounded=True)
-tb(s, 7.05, 3.35, 5.5, 0.4, [{"runs": [
-    {"text": "CAUSAL ENSEMBLE", "size": 12.5, "bold": True, "color": ORANGE}]}])
-bullets(s, 7.05, 3.75, 5.45, 2.3, [
-    ("Tabular features  +  learned causal-temporal", 0, False, WHITE),
-    ("event representations from Phase 2 / 3", 1, False, RGBColor(0xC9, 0xD6, 0xE3)),
-    ("Meta-ensemble over several gradient-boosted heads", 0, False, WHITE),
-    ("→ this is the configuration that reaches 0.709", 1, False,
-     RGBColor(0xC9, 0xD6, 0xE3))], size=12)
+rect(s, 0.6, 3.15, 12.15, 3.0, NAVY, rounded=True)
+tb(s, 0.95, 3.32, 11.6, 0.4, [{"runs": [
+    {"text": "Why HistGradientBoosting (HGB) over a neural net?", "size": 13.5,
+     "bold": True, "color": ORANGE}]}])
+bullets(s, 0.95, 3.8, 11.6, 2.2, [
+    ("Heterogeneous features — handles counts, ratios, and one-hots natively.",
+     0, False, WHITE),
+    ("Strong, interpretable baseline — quantifies each source's contribution.",
+     0, False, WHITE),
+    ("Scale-invariant tree splits — minimal feature engineering.", 0, False, WHITE),
+    ("Configuration: max_iter 150 · learning_rate 0.04 · l2 0.05.", 0, False,
+     RGBColor(0xC9, 0xD6, 0xE3))], size=12.5, gap=9)
 
-# ============================================================ S15  EXP-1
-s = base("04  ·  EXPERIMENTS", "Experiment 1 — Auxiliary Attribute Coverage")
-px, pw, ph = pic(s, "fig_coverage.png", 1.55, 4.4, 7.0, x=0.55)
-rect(s, 8.0, 1.55, 4.8, 4.5, LIGHT, rounded=True)
-tb(s, 8.25, 1.7, 4.4, 0.4, [{"runs": [
-    {"text": "TAKEAWAYS", "size": 13, "bold": True, "color": ORANGE}]}])
-bullets(s, 8.25, 2.15, 4.4, 3.7, [
-    "Polarity, scope, novelty, credibility — ~85% coverage: dense, usable signals.",
-    "Surprise — only 6.6%: sparse but high-value, concentrated in earnings & macro.",
-    ("→ treat the four as standard features; treat surprise as a "
-     "sparse high-information indicator", 1)], size=12.5)
+# ============================================================ S11  FEATURE DETAIL
+s = base("03  ·  METHOD — PHASE 3", "Phase 3 — Feature Detail")
+rect(s, 0.6, 1.45, 6.05, 4.7, LIGHT, rounded=True)
+tb(s, 0.85, 1.6, 5.6, 0.4, [{"runs": [
+    {"text": "PRICE FEATURES  (28-d)", "size": 12.5, "bold": True, "color": ORANGE}]}])
+bullets(s, 0.85, 2.0, 5.55, 3.9, [
+    "Daily returns — 10",
+    "Return statistics (mean, std, 5-day) — 4",
+    "Log-volume statistics — 2",
+    "Relative OHLC summaries — 12"], size=12.5)
+rect(s, 6.8, 1.45, 5.95, 4.7, LIGHT, rounded=True)
+tb(s, 7.05, 1.6, 5.5, 0.4, [{"runs": [
+    {"text": "EVENT FEATURES  (82-d)", "size": 12.5, "bold": True, "color": ORANGE}]}])
+bullets(s, 7.05, 2.0, 5.5, 3.9, [
+    "Per-type event counts — 20",
+    "Signed magnitude sums — 20",
+    "Absolute magnitude sums — 20",
+    "Last-event one-hot — 20",
+    "Global magnitude statistics — 2"], size=12.5)
 
-# ============================================================ S16  EXP-2
-s = base("04  ·  EXPERIMENTS", "Experiment 2 — Main Results & Ablation")
-pic(s, "fig_ablation.png", 1.5, 4.05, 8.4, x=0.55)
-rect(s, 9.2, 1.5, 3.6, 5.1, LIGHT, rounded=True)
-tb(s, 9.42, 1.65, 3.3, 0.4, [{"runs": [
-    {"text": "READING", "size": 13, "bold": True, "color": ORANGE}]}])
-bullets(s, 9.42, 2.1, 3.25, 4.4, [
-    "Tabular news+price+stock — 0.693 macro-F1.",
-    "Causal ensemble — 0.709: a consistent +1.6-point gain.",
-    "ODE-only variants stay below the tabular baseline — not featured.",
-    ("single seed — read as a preliminary point estimate", 1)], size=11.5)
-
-# ============================================================ S17  EXP-3
-s = base("04  ·  EXPERIMENTS", "Experiment 3 — Honest Evaluation")
-pic(s, "fig_split.png", 1.5, 4.5, 6.0, x=0.6)
+# ============================================================ S12  KEY RESULT
+s = base("04  ·  EXPERIMENTS", "Key Result — Stratified vs Chronological")
+pic(s, "fig_split.png", 1.5, 4.55, 6.0, x=0.6)
 rect(s, 7.0, 1.5, 5.8, 5.05, LIGHT, rounded=True)
 tb(s, 7.25, 1.66, 5.4, 0.4, [{"runs": [
-    {"text": "THREE HONEST READINGS", "size": 13, "bold": True, "color": ORANGE}]}])
+    {"text": "TWO HONEST READINGS", "size": 13, "bold": True, "color": ORANGE}]}])
 bullets(s, 7.25, 2.12, 5.35, 4.2, [
-    "Stratified 0.693 — features carry usable signal in-distribution.",
-    "Chronological 0.337 ≈ random 0.333 — forward-time direction at ±0.5% is "
-    "near-impossible (consistent with semi-strong market efficiency).",
-    "FLAT collapses under the time split — the model degenerates to the "
-    "majority classes.",
-    ("Stratified-only reporting would overstate real predictive power.", 1,
-     True, NAVY)], size=12)
+    "Stratified random — macro-F1 0.693, accuracy 0.728. Well above the 0.43 "
+    "majority and 0.33 random baselines: the features carry usable signal.",
+    "Chronological — macro-F1 0.337. Near random, consistent with semi-strong "
+    "market efficiency: forward-time prediction is genuinely hard.",
+    ("We report both splits — reporting only the stratified number would "
+     "overstate real-world predictive power.", 1, True, NAVY)], size=12)
 
-# ============================================================ S18  DISCUSSION
-s = base("05  ·  DISCUSSION", "Limits, What We Learned, Future Work")
-cols = [("WHAT WE LEARNED", GREEN, [
-    "EDA-driven attribute design is the strongest, most defensible contribution.",
-    "Three negative results share one cause — the weak forward-time signal.",
-    "Stratified-only reporting overstates real-world power."]),
-        ("LIMITS", RED, [
-    "End-to-end causal discovery did not learn — graph stays at initialization.",
-    "Neural-ODE propagation overfits — low-SNR daily data, high-capacity "
-    "continuous-time models fit noise.",
-    "Single seed; 5% subset; 22 tickers limit regime coverage."]),
-        ("FUTURE WORK", BLUE, [
-    "Event-type graph from lagged co-occurrence (no end-to-end gradient).",
-    "Multi-seed confidence intervals; rolling walk-forward validation.",
-    "LLM-assisted surprise extraction to lift its 6.6% coverage."])]
-for i, (hd, cl, items) in enumerate(cols):
-    cx = 0.6 + i * 4.07
-    rect(s, cx, 1.5, 3.85, 4.95, LIGHT, rounded=True)
-    rect(s, cx, 1.5, 3.85, 0.5, cl, rounded=False)
-    tb(s, cx + 0.2, 1.58, 3.5, 0.4, [{"runs": [
-        {"text": hd, "size": 12.5, "bold": True, "color": WHITE}]}])
-    bullets(s, cx + 0.2, 2.15, 3.5, 4.1, items, size=11, gap=8)
+# ============================================================ S13  ABLATION
+s = base("04  ·  EXPERIMENTS", "Ablation — Feature-Group Contribution")
+tb(s, 0.6, 1.4, 12, 0.4, [{"runs": [
+    {"text": "Stratified-random macro-F1 for the combined-feature models:",
+     "size": 13, "color": INK}]}])
+table(s, 1.7, 1.95, 9.9, [
+    ["Feature set", "Dim.", "Macro-F1"],
+    ["Price + events", "110", "0.684"],
+    ["Full model:  price + events + stock ID", "132", "0.693"]],
+    [6.4, 1.6, 1.9], fs=13, row_h=0.62)
+rect(s, 0.6, 4.0, 12.15, 2.3, LIGHT, rounded=True)
+tb(s, 0.95, 4.18, 11.6, 0.4, [{"runs": [
+    {"text": "Reading", "size": 13, "bold": True, "color": ORANGE}]}])
+bullets(s, 0.95, 4.6, 11.6, 1.6, [
+    "Adding stock identity lifts macro-F1 from 0.684 to 0.693 — ticker-specific "
+    "volatility and reaction patterns remain useful.",
+    "The combined price-event-stock representation is learnable under a "
+    "stratified split; it is the configuration we report."], size=12)
 
-# ============================================================ S19  REFS
-s = base("REFERENCES & Q&A", "Key References  ·  Thank You")
-refs = [("Baseline", "Li et al.  CausalStock: Deep End-to-end Causal Discovery for "
-         "News-driven Stock Movement Prediction.  NeurIPS 2024."),
-        ("Data", "Dong et al.  FNSPID: A Comprehensive Financial News Dataset in "
-         "Time Series.  KDD ADS 2024."),
-        ("NLP", "Araci.  FinBERT: Financial Sentiment Analysis with Pre-trained "
-         "Language Models.  arXiv 2019."),
-        ("Causal", "Zheng et al.  DAGs with NO TEARS.  NeurIPS 2018."),
-        ("Causal", "Tank et al.  Neural Granger Causality.  TPAMI 2022."),
-        ("Caveat", "Reisach et al.  Beware of the Simulated DAG!  NeurIPS 2021.")]
-for i, (tag, txt) in enumerate(refs):
-    y = 1.5 + i * 0.62
-    rect(s, 0.6, y, 1.25, 0.46, NAVY, rounded=True)
-    tb(s, 0.6, y + 0.08, 1.25, 0.35, [{"align": PP_ALIGN.CENTER, "runs": [
-        {"text": tag, "size": 10, "bold": True, "color": ORANGE}]}],
-       align=PP_ALIGN.CENTER)
-    tb(s, 2.0, y + 0.06, 10.7, 0.5, [{"runs": [
-        {"text": txt, "size": 11.5, "color": INK}]}])
-rect(s, 0.6, 5.45, 12.15, 1.5, NAVY, rounded=True)
-tb(s, 0.6, 5.75, 12.15, 0.6, [{"align": PP_ALIGN.CENTER, "runs": [
-    {"text": "Q & A   —   Thank you for listening", "size": 22, "bold": True,
+# ============================================================ S14  COMPARISON
+s = base("04  ·  EXPERIMENTS", "Comparison with the NeurIPS 2024 CausalStock")
+table(s, 0.55, 1.5, 12.25, [
+    ["Axis", "CausalStock (NeurIPS 2024)", "Ours"],
+    ["Causality level", "Stock-level graph", "Event-type graph (20×20)"],
+    ["News representation", "Dense denoised embedding",
+     "Structured event + impact profile"],
+    ["Prediction task", "Binary up / down", "3-class with a ±0.5% FLAT zone"],
+    ["Evaluation", "Mostly random split", "Stratified + chronological"]],
+    [2.8, 4.5, 4.95], fs=11.5, row_h=0.66)
+rect(s, 0.55, 5.0, 12.25, 1.55, NAVY, rounded=True)
+tb(s, 0.9, 5.18, 11.6, 0.45, [{"runs": [
+    {"text": "Complementary, not competing", "size": 13, "bold": True,
+     "color": ORANGE}]}])
+tb(s, 0.9, 5.58, 11.6, 0.85, [{"lh": 1.18, "runs": [{"text":
+    "Event-type causality transfers across companies and markets; stock-level "
+    "causality is bound to a fixed company universe. We evaluate on a stricter, "
+    "dual-split protocol.", "size": 12, "color": WHITE}]}])
+
+# ============================================================ S15  CONCLUSION
+s = base("04  ·  CONCLUSION", "Conclusion & Future Work")
+rect(s, 0.6, 1.5, 6.0, 4.7, LIGHT, rounded=True)
+rect(s, 0.6, 1.5, 6.0, 0.5, GREEN)
+tb(s, 0.8, 1.58, 5.6, 0.4, [{"runs": [
+    {"text": "WHAT WE CONTRIBUTE", "size": 12.5, "bold": True, "color": WHITE}]}])
+bullets(s, 0.8, 2.15, 5.6, 3.9, [
+    "A clearer event-structured problem formulation.",
+    "An EDA-driven event schema — three attributes earned from measured data.",
+    "A mathematically specified lag-aware event-causal model.",
+    "An honest analysis separating in-distribution information content from "
+    "forward-time predictability."], size=11.5, gap=9)
+rect(s, 6.75, 1.5, 6.0, 4.7, LIGHT, rounded=True)
+rect(s, 6.75, 1.5, 6.0, 0.5, BLUE)
+tb(s, 6.95, 1.58, 5.6, 0.4, [{"runs": [
+    {"text": "FUTURE WORK", "size": 12.5, "bold": True, "color": WHITE}]}])
+bullets(s, 6.95, 2.15, 5.6, 3.9, [
+    "Integrate A and T_lag directly as Phase-3 features.",
+    "Model cross-stock event propagation.",
+    "Regime-aware temporal encoding against distribution shift.",
+    "Rolling walk-forward validation as the default protocol."], size=11.5, gap=9)
+tb(s, 0.6, 6.35, 12.15, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [
+    {"text": "We do not claim solved stock prediction — we claim a clean "
+     "formulation and an honest study of where structured news helps.",
+     "size": 11, "italic": True, "color": GRAY}]}], align=PP_ALIGN.CENTER)
+
+# ============================================================ S16  Q&A
+s = base("THANK YOU", "Q & A")
+rect(s, 0.6, 2.4, 12.15, 2.6, NAVY, rounded=True)
+tb(s, 0.6, 3.0, 12.15, 0.7, [{"align": PP_ALIGN.CENTER, "runs": [
+    {"text": "Q & A   —   Thank you for listening", "size": 24, "bold": True,
      "color": WHITE}]}], align=PP_ALIGN.CENTER)
-tb(s, 0.6, 6.35, 12.15, 0.4, [{"align": PP_ALIGN.CENTER, "runs": [
+tb(s, 0.6, 3.85, 12.15, 0.5, [{"align": PP_ALIGN.CENTER, "runs": [
     {"text": "CausalStock  ·  CS173 Data Mining Final  ·  Team 2",
-     "size": 12, "color": RGBColor(0x9D, 0xB0, 0xC4)}]}], align=PP_ALIGN.CENTER)
+     "size": 13, "color": RGBColor(0x9D, 0xB0, 0xC4)}]}], align=PP_ALIGN.CENTER)
 
 out = HERE / "CausalStock_CS173_Final.pptx"
 prs.save(out)
-print("saved", out, "—", len(prs.slides.__iter__.__self__._sldIdLst), "slides")
+print("saved", out, "—", len(prs.slides._sldIdLst), "slides")
