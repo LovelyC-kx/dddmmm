@@ -1,0 +1,214 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{17}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{}, \showDOI{}, and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showDOI}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showDOI #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showDOI      \undefined \def \showDOI       #1{#1}\fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[Araci(2019)]%
+        {araci2019}
+\bibfield{author}{\bibinfo{person}{Dogu Araci}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{FinBERT: Financial Sentiment Analysis with
+  Pre-trained Language Models}.
+\newblock \bibinfo{journal}{\emph{arXiv preprint arXiv:1908.10063}}
+  (\bibinfo{year}{2019}).
+\newblock
+
+
+\bibitem[Chen et~al\mbox{.}(2019)]%
+        {chen2019finegrained}
+\bibfield{author}{\bibinfo{person}{Deli Chen}, \bibinfo{person}{Yanyan Zou},
+  \bibinfo{person}{Keiko Harimoto}, \bibinfo{person}{Ruihan Bao},
+  \bibinfo{person}{Xuancheng Ren}, {and} \bibinfo{person}{Xu Sun}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Incorporating Fine-grained Events in Stock Movement
+  Prediction}. In \bibinfo{booktitle}{\emph{Proceedings of ECONLP}}.
+\newblock
+
+
+\bibitem[Ding et~al\mbox{.}(2014)]%
+        {ding2014structured}
+\bibfield{author}{\bibinfo{person}{Xiao Ding}, \bibinfo{person}{Yue Zhang},
+  \bibinfo{person}{Ting Liu}, {and} \bibinfo{person}{Junwen Duan}.}
+  \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Using Structured Events to Predict Stock Price
+  Movement: An Empirical Investigation}. In
+  \bibinfo{booktitle}{\emph{Proceedings of EMNLP}}.
+\newblock
+
+
+\bibitem[Ding et~al\mbox{.}(2015)]%
+        {ding2015deep}
+\bibfield{author}{\bibinfo{person}{Xiao Ding}, \bibinfo{person}{Yue Zhang},
+  \bibinfo{person}{Ting Liu}, {and} \bibinfo{person}{Junwen Duan}.}
+  \bibinfo{year}{2015}\natexlab{}.
+\newblock \showarticletitle{Deep Learning for Event-Driven Stock Prediction}.
+  In \bibinfo{booktitle}{\emph{Proceedings of IJCAI}}.
+\newblock
+
+
+\bibitem[Dong et~al\mbox{.}(2024)]%
+        {dong2024fnspid}
+\bibfield{author}{\bibinfo{person}{Zihan Dong}, \bibinfo{person}{Xinyu Fan},
+  {and} \bibinfo{person}{Zhen Peng}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{FNSPID: A Comprehensive Financial News Dataset in
+  Time Series}. In \bibinfo{booktitle}{\emph{Proceedings of KDD ADS Track}}.
+\newblock
+
+
+\bibitem[Granger(1969)]%
+        {granger1969}
+\bibfield{author}{\bibinfo{person}{C.~W.~J. Granger}.}
+  \bibinfo{year}{1969}\natexlab{}.
+\newblock \showarticletitle{Investigating Causal Relations by Econometric
+  Models and Cross-spectral Methods}.
+\newblock \bibinfo{journal}{\emph{Econometrica}} \bibinfo{volume}{37},
+  \bibinfo{number}{3} (\bibinfo{year}{1969}).
+\newblock
+
+
+\bibitem[Hu et~al\mbox{.}(2018)]%
+        {hu2018han}
+\bibfield{author}{\bibinfo{person}{Ziniu Hu}, \bibinfo{person}{Weichen Liu},
+  \bibinfo{person}{Jiang Bian}, \bibinfo{person}{Xuanzhe Liu}, {and}
+  \bibinfo{person}{Tie-Yan Liu}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Listening to Chaotic Whispers}. In
+  \bibinfo{booktitle}{\emph{Proceedings of WSDM}}.
+\newblock
+
+
+\bibitem[Koa et~al\mbox{.}(2024)]%
+        {koa2024sep}
+\bibfield{author}{\bibinfo{person}{Kelvin J.~L. Koa}, \bibinfo{person}{Yunshan
+  Ma}, \bibinfo{person}{Raymond Ng}, {and} \bibinfo{person}{Tat-Seng Chua}.}
+  \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Learning to Generate Explainable Stock Predictions
+  using Self-Reflective LLMs}. In \bibinfo{booktitle}{\emph{Proceedings of
+  WWW}}.
+\newblock
+
+
+\bibitem[Nauta et~al\mbox{.}(2019)]%
+        {nauta2019}
+\bibfield{author}{\bibinfo{person}{Meike Nauta}, \bibinfo{person}{Doina Bucur},
+  {and} \bibinfo{person}{Christin Seifert}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Causal Discovery with Attention-Based CNNs}.
+\newblock \bibinfo{journal}{\emph{Machine Learning and Knowledge Extraction}}
+  \bibinfo{volume}{1}, \bibinfo{number}{1} (\bibinfo{year}{2019}).
+\newblock
+
+
+\bibitem[Reisach et~al\mbox{.}(2021)]%
+        {reisach2021beware}
+\bibfield{author}{\bibinfo{person}{Alexander~G. Reisach},
+  \bibinfo{person}{Christof Seiler}, {and} \bibinfo{person}{Sebastian
+  Weichwald}.} \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{Beware of the Simulated DAG!}. In
+  \bibinfo{booktitle}{\emph{Proceedings of NeurIPS}}.
+\newblock
+
+
+\bibitem[Sawhney et~al\mbox{.}(2020)]%
+        {sawhney2020man}
+\bibfield{author}{\bibinfo{person}{Ramit Sawhney}, \bibinfo{person}{Shivam
+  Agarwal}, \bibinfo{person}{Arnav Wadhwa}, {and} \bibinfo{person}{Rajiv~Ratn
+  Shah}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Deep Attentive Learning for Stock Movement
+  Prediction}. In \bibinfo{booktitle}{\emph{Proceedings of EMNLP}}.
+\newblock
+
+
+\bibitem[Sawhney et~al\mbox{.}(2021)]%
+        {sawhney2021fast}
+\bibfield{author}{\bibinfo{person}{Ramit Sawhney}, \bibinfo{person}{Arnav
+  Wadhwa}, \bibinfo{person}{Shivam Agarwal}, {and} \bibinfo{person}{Rajiv~Ratn
+  Shah}.} \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{FAST: Financial News and Tweet Based Time-Aware
+  Network}. In \bibinfo{booktitle}{\emph{Proceedings of EACL}}.
+\newblock
+
+
+\bibitem[Tank et~al\mbox{.}(2022)]%
+        {tank2022}
+\bibfield{author}{\bibinfo{person}{Alex Tank}, \bibinfo{person}{Ian Covert},
+  \bibinfo{person}{Nicholas Foti}, \bibinfo{person}{Ali Shojaie}, {and}
+  \bibinfo{person}{Emily~B. Fox}.} \bibinfo{year}{2022}\natexlab{}.
+\newblock \showarticletitle{Neural Granger Causality}.
+\newblock \bibinfo{journal}{\emph{IEEE Transactions on Pattern Analysis and
+  Machine Intelligence}} \bibinfo{volume}{44}, \bibinfo{number}{8}
+  (\bibinfo{year}{2022}).
+\newblock
+
+
+\bibitem[Xu et~al\mbox{.}(2021)]%
+        {xu2021rest}
+\bibfield{author}{\bibinfo{person}{Wentao Xu} {et~al\mbox{.}}}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{REST: Relational Event-driven Stock Trend
+  Forecasting}. In \bibinfo{booktitle}{\emph{Proceedings of WWW}}.
+\newblock
+
+
+\bibitem[Xu and Cohen(2018)]%
+        {xu2018stocknet}
+\bibfield{author}{\bibinfo{person}{Yumo Xu} {and} \bibinfo{person}{Shay~B.
+  Cohen}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Stock Movement Prediction from Tweets and
+  Historical Prices}. In \bibinfo{booktitle}{\emph{Proceedings of ACL}}.
+\newblock
+
+
+\bibitem[Zheng et~al\mbox{.}(2018)]%
+        {zheng2018notears}
+\bibfield{author}{\bibinfo{person}{Xun Zheng}, \bibinfo{person}{Bryon Aragam},
+  \bibinfo{person}{Pradeep Ravikumar}, {and} \bibinfo{person}{Eric~P. Xing}.}
+  \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{DAGs with NO TEARS}. In
+  \bibinfo{booktitle}{\emph{Proceedings of NeurIPS}}.
+\newblock
+
+
+\bibitem[Zhou et~al\mbox{.}(2021)]%
+        {zhou2021trade}
+\bibfield{author}{\bibinfo{person}{Zhihan Zhou} {et~al\mbox{.}}}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{Trade the Event: Corporate Events Detection for
+  News-Based Event-Driven Trading}. In \bibinfo{booktitle}{\emph{Findings of
+  ACL}}.
+\newblock
+
+
+\end{thebibliography}

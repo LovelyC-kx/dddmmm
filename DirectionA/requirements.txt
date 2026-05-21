@@ -1,0 +1,27 @@
+# Core numerical / IO
+numpy
+pandas
+packaging
+matplotlib
+seaborn
+pyarrow
+PyYAML
+tqdm
+
+# PyTorch modeling
+torch
+torchdiffeq
+
+# Hugging Face (models + datasets)
+transformers
+datasets
+huggingface_hub
+
+# Data sources
+yfinance
+
+# LLM API client (DeepSeek/OpenAI-compatible)
+openai>=1.0.0
+
+# Modeling helpers
+scikit-learn

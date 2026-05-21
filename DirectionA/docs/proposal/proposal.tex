@@ -1,0 +1,173 @@
+% CS173 Project Proposal (Direction A)
+% ACM Template: uses acmart class (two-column by default under sigconf)
+
+\documentclass[sigconf,review]{acmart}
+
+% For class projects, disable ACM reference/copyright blocks.
+\settopmatter{printacmref=false}
+\setcopyright{none}
+
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\title{CausalStock: Lag-Aware Causal Event Chain Modeling for News-Driven Stock Movement Prediction}
+
+\acmConference[CS173 Proposal]{CS173 Course Project Proposal}{March 2026}{University Course}
+\acmYear{2026}
+\copyrightyear{2026}
+
+\author{CS173 Team}
+
+
+\begin{abstract}
+Financial news impacts stock prices through delayed and structured mechanisms (e.g., macro policy \(\rightarrow\) sector rotation \(\rightarrow\) firm earnings). Most news-driven prediction pipelines compress text into a single sentiment score, losing event semantics, propagation structure, and heterogeneous time-lag effects. We propose \textbf{CausalStock}, a three-stage framework: (1) structured financial event extraction from news, (2) differentiable lag-aware directed dependency learning over event types via sparse temporal attention with explicit sparsity and DAG-inspired regularization, and (3) temporal propagation over the learned event graph (continuous-time via a neural ODE, with a discrete-time fallback), followed by event-to-stock mapping and optional stock-graph propagation for prediction. Importantly, we use the term \emph{causal} in the predictive temporal sense (directed predictive information with time precedence), rather than claiming intervention-level causal identification from observational market data. We will evaluate on large-scale financial news (e.g., FNSPID~\cite{dong2024fnspid}) aligned with OHLCV price series using strictly chronological splits, compare against strong price-only and news-only baselines, and report both predictive performance and explanation-oriented analyses such as edge stability and event masking.
+\end{abstract}
+
+\keywords{stock movement prediction, financial NLP, event extraction, causal discovery, neural ODE, time lag}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+News-driven stock movement prediction is a classic high-stakes data mining task: given a breaking news item and recent market context, predict whether a target stock will go up or down in the near future. Despite advances in financial language models, much of the literature still reduces news to a scalar sentiment or a dense embedding and feeds it into a temporal predictor. This compression obscures \emph{what} happened (the event semantics), \emph{who} is involved (entities), and \emph{how} shocks propagate with \emph{time lags} across markets.
+
+We observe two recurring gaps. First, different event types induce different market responses and delays: an interest-rate decision can affect equities gradually through financing and valuation channels, while an earnings surprise may trigger an immediate price jump. Second, real markets contain causal dependencies among event types (macro \(\rightarrow\) corporate \(\rightarrow\) market events) and across firms (supply chain, sector, competition). Our proposal is to explicitly model these mechanisms in a structured, learnable pipeline.
+
+\textbf{Contributions.} This proposal will deliver: (i) a structured event representation for financial news, (ii) a differentiable, lag-aware causal discovery model over event types that outputs a sparse causal graph with learned lags, and (iii) a continuous-time propagation and prediction model that produces both predictions and causal explanation chains.
+
+\section{Related Work}
+\textbf{Financial text modeling.} FinBERT-style encoders improve domain robustness for finance text classification and sentiment tasks~\cite{araci2019finbert}. However, pure sentiment is often insufficient for event-driven forecasting.
+
+\textbf{Event-driven forecasting.} Prior work uses event extraction and temporal models (RNN/LSTM/Transformer) to predict returns. These models often treat time discretely and do not learn explicit inter-event causality or lag parameters.
+
+\textbf{Causal discovery.} NOTEARS introduced a continuous optimization framework for enforcing acyclicity in learned graphs~\cite{zheng2018notears}. Neural causal discovery variants extend to nonlinear settings and temporal interactions.
+
+\textbf{Continuous-time dynamics.} Neural ODEs model hidden states as solutions of differential equations and enable learning under irregular sampling~\cite{chen2018neuralode}. This is attractive for financial news streams with bursty timestamps.
+
+\textbf{Graph propagation.} Graph attention networks (GAT) learn weighted message passing on relational graphs~\cite{velickovic2018gat}. In markets, firm relations provide a natural propagation substrate.
+
+\section{Problem Statement}
+Let \(s\) denote a target stock and \(d\) denote a trading day. Define the next-day close-to-close return as
+\begin{equation}
+r_{s,d+1} = \frac{C_{s,d+1} - C_{s,d}}{C_{s,d}},
+\end{equation}
+where \(C_{s,d}\) is the closing price of stock \(s\) on day \(d\). We convert the return into a three-way movement label
+\begin{equation}
+y_{s,d+1} =
+\begin{cases}
+\text{UP}, & r_{s,d+1} > \tau_u,\\
+\text{DOWN}, & r_{s,d+1} < \tau_d,\\
+\text{FLAT}, & \text{otherwise},
+\end{cases}
+\end{equation}
+where \(\tau_u > 0\) and \(\tau_d < 0\) are validation-tuned thresholds.
+
+For each stock \(s\) and prediction day \(d\), the input consists of: (1) all news articles published within the previous \(w\) trading days, (2) the historical OHLCV sequence of stock \(s\), and (3) optional market-wide or sector-level context features. To avoid look-ahead bias, news released after market close is assigned to the next trading day. Company-specific news is linked to stocks by entity linking, while macro or sector news is treated as shared evidence rather than forced into a single-ticker assignment.
+
+\paragraph{Goal.} Learn a function \(f\) such that
+\begin{equation}
+(\hat{y}_{s,t}, \hat{m}_{s,t}) = f\big(\{(x_i,t_i)\}_{t-w\le t_i\le t},\, P_s(\le t)\big),
+\end{equation}
+while producing an interpretable causal chain describing which events and paths contributed to the prediction.
+
+\section{Experiment Methodology (Solution)}
+Our solution follows a three-stage pipeline aligned with the Direction A design and code structure.
+
+\subsection{Stage 1: Structured Financial Event Extraction}
+Each news item \(x_i\) is mapped to a structured event record. Rather than assuming every article yields a perfectly labeled fixed quadruple, we use a flexible form
+\begin{equation}
+e_i = (k_i, A_i, M_i, t_i),
+\end{equation}
+where \(k_i\) is an event type (\(K\) categories), \(A_i\) is a set of role-specific arguments (e.g., \(\{(\text{role}_j,\text{arg}_j)\}\)), \(M_i\) is an optional quantitative attribute when available, and \(t_i\) is the publication timestamp.
+
+We will define a compact ontology of roughly 8--12 financially salient types (e.g., earnings, guidance revision, mergers and acquisitions, macro policy, regulation, litigation, analyst action, and operational disruption). Since aligned news--price corpora are not annotated for full event extraction, we adopt weak supervision (rules/keywords and optional LLM-assisted labeling) and build a small manually verified subset for validation and error analysis. The extractor is trained in a multi-task manner for event-type classification, argument extraction, and optional magnitude regression. If full argument extraction proves unstable, we fall back to an event-type-plus-entity setting while keeping downstream temporal modeling unchanged.
+
+\subsection{Stage 2: Lag-Aware Causal Discovery over Event Types (STACD)}
+We discover a directed dependency graph over event types \(G=(V,A,T)\) where \(A\in[0,1]^{K\times K}\) is dependency strength and \(T\in\mathbb{R}_{>0}^{K\times K}\) is lag (in normalized time units). Here, \emph{causal} is used in the sense of \emph{predictive temporal causality}: an edge from type \(u\) to type \(v\) indicates that past occurrences of \(u\) carry directed predictive information about later occurrences or impacts of \(v\), after conditioning on observed context.
+
+The model is \textbf{Transformer-style sparse temporal attention} (not a GNN): attention logits are modulated by (a) temporal directionality (only earlier events can influence later ones), (b) a lag kernel centered at \(T[k_i,k_j]\), and (c) a learned type-pair strength prior \(A\).
+
+We regularize the learned adjacency with
+\begin{align}
+\mathcal{L}_{\text{sparse}} &= \lambda_{\text{sparse}}\,\|A\|_1,\\
+\mathcal{L}_{\text{dag}} &= \lambda_{\text{dag}}\,(\mathrm{tr}(\exp(A\odot A))-K)^2,
+\end{align}
+using a NOTEARS-style acyclicity penalty.
+
+\subsection{Stage 3: Continuous-Time Causal Propagation and Stock Prediction}
+Given a new event stream at time \(t\), we initialize an event-type shock state via
+\begin{equation}
+\mathbf{h}_{k_i}(t_i)=\mathrm{MLP}([E_{type}(k_i)\,\Vert\,\mathbf{u}_i\,\Vert\,M_i]),
+\end{equation}
+where \(\mathbf{u}_i\) is the event text embedding and \(E_{type}\) is a learnable type embedding.
+
+We evolve the vector of event-type states \(\mathbf{H}(t)\in\mathbb{R}^{K\times d}\) using a neural ODE compatible with \texttt{torchdiffeq}:
+\begin{equation}
+\frac{d\mathbf{H}(t)}{dt} = F_\theta(\mathbf{H}(t), t; A,T) - \Lambda\odot \mathbf{H}(t),
+\end{equation}
+where lag is implemented by a gating function \(\sigma(\alpha(t-T))\) inside \(F_\theta\), and \(\Lambda\) is a learnable decay.
+
+\paragraph{Solving and learning.} We numerically integrate from \(t_0\) to \(t\) using an ODE solver (e.g., Dormand--Prince), and backpropagate through the solver via the adjoint sensitivity method (as provided by \texttt{torchdiffeq}).
+
+\paragraph{Discrete-time fallback.} To control optimization risk, we include a discrete-time recurrent propagation model as both a mandatory ablation and a practical fallback. This isolates whether gains come from continuous-time modeling itself or from the learned event dependency structure.
+
+\paragraph{Event-to-stock mapping and stock propagation.} We map event-type impacts to stock impacts using a learnable affinity matrix (optionally masked by priors), and propagate over a stock relation graph using a GAT-style layer with gating. Finally, we aggregate shocks with an attention pooling module and fuse with a GRU-encoded OHLCV history to predict \((\hat{y},\hat{m})\).
+
+\section{Data Mining Techniques to be Used}
+\begin{itemize}
+\item \textbf{Representation learning:} FinBERT embeddings, event-type embeddings, learnable Fourier time features.
+\item \textbf{Sequence modeling:} sparse temporal attention with causal/lag modulation.
+\item \textbf{Causal discovery:} continuous DAG regularization (NOTEARS penalty) and sparsity constraints.
+\item \textbf{Continuous-time modeling:} neural ODE integration for irregular timestamps.
+\item \textbf{Graph mining:} stock relation graph propagation (GAT-style attention message passing).
+\end{itemize}
+
+\section{Feasibility}
+\textbf{Data availability.} We will use publicly available financial news datasets (e.g., FNSPID) and align them with market prices (OHLCV) via standard finance APIs. Event types are predefined; weak supervision and partial labeling are feasible.
+
+\textbf{Implementation feasibility.} The repository already contains modular PyTorch implementations for event extraction, STACD causal discovery, ODE propagation with an Euler fallback, and graph propagation without external GNN dependencies. This reduces integration risk.
+
+\textbf{Iteration strategy and risk control.} To keep iteration efficient, we will begin with a high-coverage subset of liquid stocks and a constrained time range, then scale up after event extraction and dependency learning stabilize. If fine-grained argument extraction underperforms, we retain event types and linked entities. If ODE training is unstable, we revert to the discrete-time variant. If single-stock prediction is too noisy initially, we validate the framework first at the sector level before scaling to individual tickers.
+
+\textbf{Compute.} Fine-tuning FinBERT and training the full pipeline can be done on a single GPU (or CPU with reduced settings) due to moderate model sizes and configurable sequence lengths.
+
+\section{Evaluation Plan}
+\subsection{Data Split and Leakage Control}
+We will use strictly chronological splits (train/validation/test by time). All news is aligned by publication time, and any article released after market close is assigned to the next trading day. No future prices or future news will be used in feature construction.
+
+\subsection{Metrics}
+For classification, we will report macro-F1, balanced accuracy, Matthews correlation coefficient (MCC), and standard accuracy. For probabilistic outputs, we will additionally report calibration metrics such as expected calibration error (ECE). For regression-style return prediction (when applicable), we will report MAE and RMSE.
+
+Because stock prediction is decision-oriented, we will also include a simple trading evaluation with modest transaction costs, reporting cumulative return and Sharpe ratio.
+
+\subsection{Baselines and Ablations}
+We will compare against four groups of baselines: (i) \textbf{price-only} models (OHLCV-based GRU/LSTM or transformer predictors), (ii) \textbf{news-only} models (FinBERT sentiment or text embeddings with temporal heads), (iii) \textbf{event-based non-causal} models (events with temporal encoders but without lag-aware directed dependency learning), and (iv) recent explainable or graph-based baselines when faithful reimplementation or public code is available.
+
+Ablations remove or replace major modules one at a time: no event extraction, no lag learning, no sparsity/DAG regularization, no continuous-time propagation (discrete-time only), no stock propagation, and no price fusion. We will run multiple random seeds and test robustness across sectors and market regimes.
+
+\subsection{Interpretability Evaluation}
+We will report (a) sparsity and stability of learned directed edges across runs, (b) plausibility checks against known macro-to-sector patterns, and (c) case studies showing extracted explanation chains. We will also quantify necessity/sufficiency of top-ranked event paths using event masking.
+
+\section{Timetable and Workload Division}
+\begin{table}[H]
+\centering
+\caption{Compressed 8-week timeline and responsibilities.}
+\begin{tabular}{@{}p{0.18\linewidth}p{0.58\linewidth}p{0.24\linewidth}@{}}
+\toprule
+\textbf{Week} & \textbf{Milestones}\\
+\midrule
+W1--W2 & Complete Phase 1: collect and clean financial news; implement event quadruple extraction (event type, subject, object, magnitude) and prioritize delivering a usable extraction pipeline.\\
+W3--W4 & Complete Phase 2: run full inference over the news corpus; deduplicate and align timestamps; link events to tickers and price series; produce the event–ticker–price dataset required by later stages; obtain usable adjacency (A) and lag (T) matrices and visualizations. \\
+W5--W6 & Complete Phase 3: run propagation and prediction experiments at the sector/industry level first; based on results, evaluate and (if appropriate) scale the approach to single-stock level. \\
+W7--W8 & Continue stock-level rollout, consolidate experimental results and visualizations, and finalize the project report and paper manuscript. \\
+\bottomrule
+\end{tabular}
+\label{tab:timetable}
+\end{table}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs}
+
+\end{document}

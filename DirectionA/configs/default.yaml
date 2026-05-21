@@ -1,0 +1,77 @@
+# CausalStock 默认配置
+# =====================
+
+# 数据配置
+data:
+  fnspid_path: "data/fnspid"
+  edt_path: "data/edt/TradeTheEvent/data"
+  prices_path: "data/sp100_prices"
+  sectors_path: "data/sp100_sectors.csv"
+  train_start: "2018-01-01"
+  train_end: "2021-12-31"
+  val_start: "2022-01-01"
+  val_end: "2022-12-31"
+  test_start: "2023-01-01"
+  test_end: "2023-12-31"
+  label_threshold: 0.005  # ±0.5% 划分UP/DOWN/FLAT
+  price_window: 30        # 历史价格窗口(天)
+  event_window: 30        # 历史事件窗口(天)
+
+# Phase 1: 事件抽取
+event_extraction:
+  model_name: "ProsusAI/finbert"
+  freeze_layers: 8
+  num_event_types: 20
+  batch_size: 32
+  lr: 2e-5
+  epochs: 10
+  dropout: 0.3
+  loss_weights:
+    type: 1.0
+    argument: 1.0
+    magnitude: 0.5
+
+# Phase 2: 因果发现
+causal_discovery:
+  d_model: 256
+  n_heads: 8
+  n_layers: 4
+  sigma: 2.0           # 高斯核宽度
+  dropout: 0.1
+  lambda_sparse: 0.01  # 稀疏性系数
+  lambda_dag: 1.0      # DAG约束系数
+  causal_threshold: 0.1 # 因果边阈值
+
+# Phase 3: 传播预测
+propagation:
+  impact_dim: 64
+  n_stocks: 100
+  n_ode_steps: 20
+  t_max: 10.0
+  hidden_dim: 128
+  price_feat_dim: 32
+
+# 端到端训练
+training:
+  batch_size: 64
+  lr: 5e-4
+  weight_decay: 0.01
+  epochs: 30
+  warmup_epochs: 3
+  scheduler: "cosine"
+  grad_clip: 1.0
+  seed: 42
+  n_seeds: 5           # 跑5次取平均
+
+# 交易回测
+backtest:
+  top_k: 10           # 买入/卖出前K只
+  commission: 0.001    # 单边手续费 0.1%
+  allow_short: true
+
+# 输出
+output:
+  dir: "outputs"
+  save_model: true
+  save_causal_graph: true
+  log_interval: 100
