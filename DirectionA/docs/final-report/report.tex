@@ -26,7 +26,7 @@
 \begin{document}
 
 \begin{abstract}
-News-driven stock prediction is difficult because financial articles affect prices through structured events, delayed reactions, and market-wide interactions rather than through sentiment alone. Existing neural approaches often encode each article as a dense text vector or sentiment score, which weakens both temporal reasoning and interpretability. We present \textsc{CausalStock}, a framework that represents financial news as event quadruples, learns a sparse lag-aware event-type dependency graph, and uses the resulting event structure for stock movement prediction. The method combines a 20-class financial event ontology, differentiable lag-aware causal discovery with NOTEARS-style acyclicity regularization, and a tabular prediction layer that fuses event statistics with price history. On a 5\% FNSPID subset, the event extraction stage produces 10{,}901 structured events with explicit type, argument, magnitude, polarity, novelty, scope, and credibility annotations. A downstream study over 9{,}566 ticker-aligned examples from 22 stocks shows that a price-and-event model reaches 0.684 macro-F1 under stratified evaluation, and adding stock identity yields 0.693 macro-F1. Under chronological evaluation, performance drops to 0.337 macro-F1, exposing severe temporal distribution shift and showing that forward-time stock prediction remains the central challenge.
+News-driven stock prediction is difficult because financial articles affect prices through structured events, delayed reactions, and market-wide interactions rather than through sentiment alone. Existing neural approaches often encode each article as a dense text vector or sentiment score, which weakens both temporal reasoning and interpretability. We present \textsc{CausalStock}, a three-stage framework that represents financial news as structured events, learns a sparse lag-aware event-type dependency graph, and propagates event shocks for stock movement prediction. We deliberately begin from data: an exploratory analysis of a 5\% subset of FNSPID reveals heavy headline duplication ($\approx$29\%), large publisher and author missingness (79\% and 68\%) against near-complete URLs, and predominantly sector- or market-wide article scope ($\approx$89\%). These three findings directly motivate three event attributes beyond the standard $(\text{subject},\text{action},\text{object},\text{magnitude})$ quadruple: \emph{novelty}, \emph{credibility}, and \emph{scope}. The extraction stage produces 10{,}901 structured events over a 20-class ontology. A downstream study over 9{,}566 ticker-aligned examples from 22 stocks shows that a tabular price-event-ticker model reaches 0.693 macro-F1 under stratified evaluation, and that a causal ensemble fusing price and event features with ODE-derived causal representations improves this to 0.709 -- a modest but consistent gain. Under chronological evaluation, all models fall to roughly 0.34 macro-F1, near the three-class random baseline, exposing temporal distribution shift as the central open challenge. We position the work as complementary to the NeurIPS 2024 CausalStock, which models stock-level causality, and give an interpretable comparison along data, method, and protocol axes.
 \end{abstract}
 
 \begin{CCSXML}
@@ -46,7 +46,7 @@ News-driven stock prediction is difficult because financial articles affect pric
 
 \ccsdesc[500]{Computing methodologies~Supervised learning}
 \ccsdesc[500]{Information systems~Data mining}
-\keywords{stock movement prediction, financial NLP, event extraction, causal discovery, tabular modeling}
+\keywords{stock movement prediction, financial NLP, event extraction, causal discovery, exploratory data analysis, tabular modeling}
 
 \maketitle
 
@@ -54,19 +54,25 @@ News-driven stock prediction is difficult because financial articles affect pric
 
 News-driven stock prediction asks whether market movements can be forecast from recent financial news and historical price behavior. The task is useful for event monitoring, risk analysis, and decision support, but it is technically fragile: a news item rarely acts as a standalone signal. An interest-rate announcement, an earnings surprise, or an analyst downgrade can affect a stock immediately, after several trading days, or indirectly through sector and supply-chain relations.
 
-Most existing financial text models simplify this setting by compressing each article into a sentiment label, a contextual embedding, or an attention-pooled representation \cite{araci2019,xu2018stocknet,hu2018han,sawhney2020man,sawhney2021fast,xu2021rest}. These representations are useful, but they blur three pieces of information that are central to event-driven markets: what event occurred, which entity it affected, and when its downstream effect should arrive. Event-based methods recover some of this structure \cite{ding2014structured,ding2015deep,zhou2021trade}, yet they typically do not learn a global lag-aware dependency graph over event types.
+Most existing financial text models simplify this setting by compressing each article into a sentiment label, a contextual embedding, or an attention-pooled representation \cite{araci2019,xu2018stocknet,hu2018han,sawhney2020man,sawhney2021fast,xu2021rest}. These representations are useful, but they blur three pieces of information that are central to event-driven markets: \emph{what} event occurred, \emph{which} entity it affected, and \emph{when} its downstream effect should arrive. Event-based methods recover some of this structure \cite{ding2014structured,ding2015deep,zhou2021trade}, yet they typically do not learn a global lag-aware dependency graph over event types.
 
-This paper studies the following question: can financial news be modeled as a structured event process whose event types have learnable delayed dependencies, and can that structure improve the analysis of stock movement prediction? We use the term causal in a predictive temporal sense: an edge from one event type to another indicates directed time-preceded predictive influence under the observed data and regularization assumptions. We do not claim intervention-level identifiability from observational market data.
+This paper studies the following question: can financial news be modeled as a structured event process whose event types have learnable delayed dependencies, and can that structure improve the analysis of stock movement prediction? We use the term \emph{causal} in a predictive temporal sense: an edge from one event type to another indicates directed, time-preceded predictive influence under the observed data and regularization assumptions. We do not claim intervention-level identifiability from observational market data.
 
-We propose \textsc{CausalStock}, a three-stage framework for event-structured stock prediction. First, raw financial articles are converted into financial event quadruples consisting of event type, subject, object, and magnitude. Second, a differentiable lag-aware causal discovery module learns an event-type strength matrix and lag matrix using sparse temporal attention with acyclicity regularization. Third, stock prediction is performed from event statistics, price history, and stock identity in a tabular classifier.
+A guiding principle of this project is that schema design should be driven by data rather than assumed in advance. We therefore start with an exploratory data analysis (EDA) of the raw news corpus and let its quality characteristics dictate which event attributes are worth extracting. This analysis yields three concrete and reusable design decisions, described in Section~\ref{sec:eda}.
 
-Our empirical analysis gives a mixed but informative result. In the stratified setting, price-and-event features reach 0.684 macro-F1, and adding stock identity improves the score to 0.693. However, chronological evaluation falls to 0.337 macro-F1, showing that temporal generalization is far harder than random-split performance suggests. The main contribution of this work is therefore not a claim of solved stock prediction, but a precise event-structured formulation, a lag-aware mathematical model, and an empirical analysis that separates information content from genuine forward predictability.
+We propose \textsc{CausalStock}, a three-stage framework for event-structured stock prediction. First, raw financial articles are converted into structured financial events whose attributes are chosen from the EDA findings. Second, a differentiable lag-aware causal discovery module learns an event-type strength matrix and lag matrix using sparse temporal attention with acyclicity regularization. Third, a causal propagation network integrates event shocks in continuous time and a tabular classifier fuses the resulting representations with price history for movement prediction.
+
+\textbf{Distinction from concurrent work.} A NeurIPS 2024 paper of the same name, CausalStock \cite{li2024causalstock}, learns causal graphs between individual \emph{stocks} via variational inference and a functional causal model. In contrast, our system learns causal graphs between 20 \emph{event types} and then propagates event-level shocks onto stocks. The two formulations are complementary: event-type causality is transferable across companies and markets, whereas stock-level causality is bound to a specific company universe. We treat \cite{li2024causalstock} as a reference point and analyze the performance gap in Section~\ref{sec:comparison}.
+
+\textbf{Contributions.} (i) An EDA-driven event schema in which three attributes -- novelty, credibility, scope -- are each justified by a measured property of the corpus. (ii) A reproducible three-stage pipeline: LLM silver labelling with rule- and market-grounded corrections, lag-aware event-type causal discovery, and an ODE-based causal propagation layer. (iii) An empirical analysis showing that the causal ensemble improves on a strong tabular baseline (0.709 vs.\ 0.693 macro-F1), and an honest separation of stratified-split information content from forward-time predictability, which collapses to near-random under chronological evaluation.
 
 \section{Related Work}
 
-\textbf{Financial text and event-driven prediction.} Prior financial NLP work shows that domain-specific language representations and event-based representations can both support stock movement analysis \cite{araci2019,xu2018stocknet,hu2018han,sawhney2020man,sawhney2021fast,xu2021rest,koa2024sep,ding2014structured,ding2015deep,chen2019finegrained,zhou2021trade}. \textsc{CausalStock} follows the event-based line but treats event types as nodes in a learned temporal dependency graph instead of reducing each article to sentiment alone.
+\textbf{Financial text and event-driven prediction.} Prior financial NLP work shows that domain-specific language representations and event-based representations can both support stock movement analysis \cite{araci2019,xu2018stocknet,hu2018han,sawhney2020man,sawhney2021fast,xu2021rest,koa2024sep,ding2014structured,ding2015deep,chen2019finegrained,zhou2021trade,chen2024efsa}. Classical finance studies further establish that the informational content of news exceeds raw tone \cite{tetlock2007media,heston2015news} and that abnormal returns concentrate around discrete corporate events \cite{mackinlay1997event,alvarado2021stock,wu2025press}. \textsc{CausalStock} follows the event-based line but treats event types as nodes in a learned temporal dependency graph instead of reducing each article to sentiment alone.
 
 \textbf{Temporal causal discovery.} Prior causal-discovery work motivates our use of time precedence, sparsity, and acyclicity when learning directed temporal relations \cite{granger1969,zheng2018notears,tank2022,nauta2019}. At the same time, causal discovery can exploit artificial benchmark structure \cite{reisach2021beware}; we therefore frame our graph as a predictive temporal structure rather than a fully identified causal model.
+
+\textbf{Continuous-time models and weak supervision.} Neural ODEs and related continuous-time models provide tools for irregularly sampled propagation \cite{chen2018node,rubanova2019latent,kidger2020neural}, and point-process models connect event streams with self-attention \cite{mei2017,zuo2020}. For supervision, LLM-generated annotations have been shown to rival crowd labels on several NLP tasks \cite{wang2021gpt3}, and finance-specific LLMs extend this to financial text \cite{yang2023fingpt}. Our novelty and credibility attributes build on news-impact studies \cite{sano2017novel} and source-factuality estimation \cite{baly2018predicting}.
 
 \section{Problem Definition}
 
@@ -74,19 +80,15 @@ Let $\mathcal{N}=\{n_i\}_{i=1}^{N}$ be a financial news stream. Each article is 
 \begin{equation}
 \phi(x_i,t_i,\tau_i)=e_i=(k_i,q_i,\boldsymbol{\pi}_i,\tau_i,t_i),
 \end{equation}
-where $k_i\in\{1,\ldots,K\}$ is an event type, $q_i=(S_i,A_i,O_i,M_i)$ is a subject-action-object-magnitude quadruple, and $\boldsymbol{\pi}_i$ stores auxiliary impact attributes such as polarity, surprise, scope, novelty, and credibility. In our experiments, $K=20$.
+where $k_i\in\{1,\ldots,K\}$ is an event type, $q_i=(S_i,A_i,O_i,M_i)$ is a subject-action-object-magnitude quadruple, and $\boldsymbol{\pi}_i=(\text{polarity},\text{surprise},\text{scope},\text{novelty},\text{credibility})$ stores auxiliary impact attributes. In our experiments, $K=20$.
 
 The temporal causal discovery problem is to learn two global matrices over event types:
 \begin{equation}
 A\in(0,1)^{K\times K}, \qquad T_{\mathrm{lag}}\in\mathbb{R}_{>0}^{K\times K}.
 \end{equation}
-The entry $A_{ab}$ measures the directed predictive strength from event type $a$ to event type $b$, while $T_{\mathrm{lag},ab}$ is the expected delay of that influence. Because the graph is learned from observational market data, these parameters should be interpreted as structured predictive dependencies under the model, not as interventionally identified effects.
+The entry $A_{ab}$ measures the directed predictive strength from event type $a$ to event type $b$, while $T_{\mathrm{lag},ab}$ is the expected delay of that influence. Because the graph is learned from observational market data, these parameters are structured predictive dependencies under the model, not interventionally identified effects.
 
-The stock prediction problem is defined over ticker-aligned examples. For stock $s$ and prediction day $d$, let $\mathcal{E}_{s,d}$ be the previous event context and let $P_{s,d-W_p:d}\in\mathbb{R}^{W_p\times 5}$ be the OHLCV price window. The next-day return is
-\begin{equation}
-r_{s,d+1}=\frac{C_{s,d+1}-C_{s,d}}{C_{s,d}},
-\end{equation}
-where $C_{s,d}$ is the close price. We use a three-class label with threshold $\delta=0.005$:
+The stock prediction problem is defined over ticker-aligned examples. For stock $s$ and prediction day $d$, let $\mathcal{E}_{s,d}$ be the previous event context and let $P_{s,d-W_p:d}\in\mathbb{R}^{W_p\times 5}$ be the OHLCV price window. The next-day return is $r_{s,d+1}=(C_{s,d+1}-C_{s,d})/C_{s,d}$, where $C_{s,d}$ is the close price. We use a three-class label with threshold $\delta=0.005$:
 \begin{equation}
 y_{s,d+1}=
 \begin{cases}
@@ -97,101 +99,142 @@ y_{s,d+1}=
 \end{equation}
 The goal is to predict $y_{s,d+1}$ from $(\mathcal{E}_{s,d},P_{s,d-W_p:d},s)$ while preserving interpretable event-level structure.
 
+\section{Exploratory Data Analysis}
+\label{sec:eda}
+
+We use a 5\% subset of FNSPID \cite{dong2024fnspid}, a large financial news and price dataset aligned over time. Rather than fix the event schema first, we profiled the raw subset and let its characteristics drive design. Tables~\ref{tab:eda_quality} and~\ref{tab:eda_clues} summarize the analysis.
+
+\begin{table}[t]
+\caption{Raw FNSPID 5\% subset: field completeness, headline duplication, and article length over stock-candidate news.}
+\label{tab:eda_quality}
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+Property & Value \\
+\midrule
+URL present & 99.98\% \\
+\texttt{Stock\_symbol} present & 66.72\% \\
+Author present & 31.56\% \\
+Publisher present & 20.54\% \\
+\midrule
+Duplicate-headline rows & 36{,}248 ($\approx$29.0\%) \\
+Article length (median / p90 / p99 chars) & 3{,}724 / 6{,}949 / 29{,}925 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Prevalence of event clues in stock-candidate news, from keyword and pattern scans. A single article may carry several clues.}
+\label{tab:eda_clues}
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+Event clue & Share of articles \\
+\midrule
+Scope: market / sector / index language & 89.2\% \\
+Price-movement language & 88.0\% \\
+Expectation or numeric comparison & 77.4\% \\
+Earnings / revenue & 56.6\% \\
+Merger / acquisition / contract & 17.6\% \\
+Dividend / buyback / split & 16.7\% \\
+Analyst rating & 12.8\% \\
+Legal / regulatory & 7.4\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three findings translate directly into schema decisions.
+
+\textbf{(F1) Heavy headline duplication motivates \emph{novelty}.} About 29\% of stock-candidate rows repeat an earlier headline. The first report of an event carries the largest informational shock, while later restatements and syndication mostly amplify reach with diminishing marginal effect \cite{sano2017novel}. We therefore add a \emph{novelty} attribute that measures how new an item is relative to recent same-ticker news, so that duplicates can be down-weighted instead of double-counted.
+
+\textbf{(F2) Missing provenance metadata motivates \emph{credibility}.} Publisher and author fields are absent for 79\% and 68\% of records, but the URL is present for essentially every record. Because reporting factuality varies sharply across outlets \cite{baly2018predicting}, we add a \emph{credibility} attribute inferred primarily from the URL domain and article provenance, with a source whitelist for top-tier financial and official outlets. This recovers a usable source-trust signal despite the missing publisher field.
+
+\textbf{(F3) Broad article scope motivates \emph{scope}.} Sector-, market-, or index-level language appears in 89\% of articles, so many items are not single-stock events. Single-subject extraction is then error-prone: an LLM may attach a market-wide story to one incidental ticker. We add a \emph{scope} attribute (single-stock / sector / market / global) that localizes the impact target, letting downstream models discount mis-attributed subjects rather than trusting every extracted subject equally.
+
+These three attributes are thus \emph{earned} from measured data properties. They primarily improve the fidelity and weighting of the event records; Section~\ref{sec:method} states precisely where each is consumed.
+
 \section{Method}
+\label{sec:method}
 
 \subsection{Overview}
 
-\textsc{CausalStock} decomposes news-driven prediction into event extraction, lag-aware event dependency learning, and stock movement prediction. This decomposition is designed to separate three roles that are often merged in dense text encoders: semantic extraction from news, temporal structure learning across event types, and market prediction under price and ticker context.
+\textsc{CausalStock} decomposes news-driven prediction into event extraction, lag-aware event dependency learning, and causal propagation for stock prediction. This decomposition separates three roles often merged in dense text encoders: semantic extraction from news, temporal structure learning across event types, and market prediction under price and ticker context.
 
-\subsection{Financial Event Representation}
+\subsection{Phase 1: Structured Event Extraction}
 
-The first module represents each article as a financial event quadruple rather than as a single sentiment score. A text encoder produces token features $H_i\in\mathbb{R}^{L\times d}$ and a pooled representation $h_i$. An event-type classifier predicts
-\begin{equation}
-\hat{k}_i=\arg\max \mathrm{softmax}\left(W_2\,\mathrm{GELU}(W_1h_i)\right).
-\end{equation}
-Span heads identify the subject and object boundaries, and a magnitude head estimates an event intensity from the pooled text representation and the predicted event-type embedding:
-\begin{equation}
-\hat{M}_i=W_m\,\mathrm{GELU}\left(W_c[h_i \Vert E_{\mathrm{type}}(\hat{k}_i)]\right).
-\end{equation}
-This representation preserves who did what to whom and with what approximate strength.
+The first module represents each article as a structured event rather than a sentiment score. The 20-class taxonomy (Table~\ref{tab:taxonomy}) groups event types by market mechanism. A text encoder produces a pooled representation $h_i$; an event-type classifier predicts $\hat{k}_i=\arg\max\,\mathrm{softmax}(W_2\,\mathrm{GELU}(W_1h_i))$; span heads identify subject and object boundaries; and a magnitude head estimates event intensity $\hat{M}_i=W_m\,\mathrm{GELU}(W_c[h_i \Vert E_{\mathrm{type}}(\hat{k}_i)])$.
 
 \begin{table}[t]
 \caption{The 20-class event taxonomy groups financial events by market mechanism.}
 \label{tab:taxonomy}
 \centering
 \small
-\begin{tabular}{p{0.22\linewidth}p{0.16\linewidth}p{0.48\linewidth}}
+\begin{tabular}{p{0.20\linewidth}p{0.13\linewidth}p{0.52\linewidth}}
 \toprule
 Group & IDs & Event families \\
 \midrule
-Macro & M1--M6 & Interest rate, growth, trade policy, monetary signal, inflation, regulation \\
+Macro & M1--M6 & Interest rate, economic data, trade policy, monetary signal, inflation, regulation \\
 Corporate & C1--C8 & Earnings, M\&A, executive change, product launch, buyback, split, litigation, bankruptcy \\
-Knowledge & K1--K4 & Analyst rating, insider trading, index rebalancing, technical breakout \\
-Geopolitical & G1--G2 & Conflict, disaster, health shock \\
+Analyst / micro & K1--K4 & Analyst rating, insider trading, index rebalancing, technical breakout \\
+Geopolitical & G1--G2 & Conflict, disaster / health crisis \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Weak supervision is used because large-scale financial news corpora do not provide complete event quadruple labels. We combine LLM-produced silver labels with rule-grounded corrections for quantities that can be checked from text or market data. Surprise is estimated from actual-versus-expected numeric pairs when available,
+\textbf{Weak supervision with hybrid corrections.} Large-scale financial news lacks complete event annotations, so we use LLM-produced silver labels \cite{wang2021gpt3,yang2023fingpt} combined with rule- and market-grounded corrections. Before each LLM call we precompute factual anchors and inject them into the prompt to suppress hallucination. \emph{Surprise} is estimated from actual-versus-expected numeric pairs when available,
 \begin{equation}
-\mathrm{surprise}=\mathrm{clip}\left(\frac{\mathrm{actual}-\mathrm{expected}}{|\mathrm{expected}|+\epsilon},-1,1\right),
+\mathrm{surprise}=\mathrm{clip}\!\left(\frac{\mathrm{actual}-\mathrm{expected}}{|\mathrm{expected}|+\epsilon},-1,1\right),
 \end{equation}
-and novelty is estimated as one minus the maximum semantic similarity to recent same-ticker news. These auxiliary attributes make the event label more informative than sentiment alone while avoiding unsupported claims when evidence is absent.
+with a fallback to the immediate price reaction when no explicit expectation is stated. \emph{Novelty} is estimated as one minus the maximum semantic similarity to the previous ten same-ticker items, using FinBERT \texttt{[CLS]} cosine similarity with a Jaccard fallback. After labelling, a post-hoc step overrides LLM estimates with high-confidence numeric values, resets credibility buckets using a source whitelist, and -- when LLM polarity strongly conflicts with the observed price reaction -- lowers credibility rather than flipping the label, preserving the original signal distribution.
 
-\subsection{Differentiable Lag-Aware Causal Discovery}
+\textbf{Where the attributes are used.} Polarity is folded into a signed event magnitude (a negative-polarity event contributes a negative magnitude). Surprise, novelty, scope, and credibility are stored on every event record; novelty and credibility additionally weight events during graph construction and propagation, and scope constrains subject attribution. The evaluated tabular prediction layer (Section~\ref{sec:phase3}) consumes event-type counts and polarity-signed magnitudes; we therefore present novelty, credibility, and scope as extraction-fidelity and weighting improvements rather than as standalone predictive features.
 
-The second module learns a global event-type dependency graph from event sequences. For event $i$, let $u_i$ be its text embedding, $k_i$ its type, and $t_i$ its timestamp. We encode time using learnable Fourier features
-\begin{equation}
-\psi(t_i)=W_t[\cos(2\pi f\odot t_i+p)\Vert \sin(2\pi f\odot t_i+p)],
-\end{equation}
-and construct the event representation
-\begin{equation}
-z_i=W_{\mathrm{in}}[u_i\Vert E_{\mathrm{type}}(k_i)\Vert \psi(t_i)].
-\end{equation}
+\subsection{Phase 2: Lag-Aware Causal Discovery (STACD)}
 
-The dependency matrices are constrained transforms of free parameters:
+The second module learns a global event-type dependency graph from event sequences with a Sparse Temporal Attention Causal Discovery (STACD) network. For event $i$ with text embedding $u_i$, type $k_i$, and timestamp $t_i$, time is encoded with learnable Fourier features $\psi(t_i)$ (64 frequencies), and the event representation is $z_i=W_{\mathrm{in}}[u_i\Vert E_{\mathrm{type}}(k_i)\Vert\psi(t_i)]$. The dependency matrices are constrained transforms of free parameters, $A=\sigma(A_{\mathrm{raw}})$ and $T_{\mathrm{lag}}=\mathrm{softplus}(T_{\mathrm{raw}})$, shared across all attention layers.
+
+For attention from current event $i$ to previous event $j$, the raw score $s_{ij}$ is modulated by a time-direction mask $m_{ij}$ (one only when $t_j<t_i$), a Gaussian lag gate, and the event-type causal strength:
 \begin{equation}
-A=\sigma(A_{\mathrm{raw}}), \qquad T_{\mathrm{lag}}=\mathrm{softplus}(T_{\mathrm{raw}}).
+g_{ij}=\exp\!\left(-\tfrac{1}{2}\frac{(|t_i-t_j|-T_{\mathrm{lag},k_jk_i})^2}{\sigma_g^2}\right),
 \end{equation}
-For attention from current event $i$ to previous event $j$, the raw attention score $s_{ij}$ is modified by three factors: a time-direction mask, a Gaussian lag gate, and the event-type causal strength. The lag gate is
-\begin{equation}
-g_{ij}=\exp\left(-\frac{1}{2}\frac{(|t_i-t_j|-T_{\mathrm{lag},k_jk_i})^2}{\sigma_g^2}\right),
-\end{equation}
-and the final score is
 \begin{equation}
 \tilde{s}_{ij}=s_{ij}+\log(m_{ij}+\epsilon)+\log(g_{ij}+\epsilon)+\log(A_{k_jk_i}+\epsilon),
 \end{equation}
-where $m_{ij}=1$ only when $t_j<t_i$. Attention weights are then $\alpha_{ij}=\mathrm{softmax}_j(\tilde{s}_{ij})$.
-
-The graph is trained with prediction loss and structural regularization:
+with $\alpha_{ij}=\mathrm{softmax}_j(\tilde{s}_{ij})$. The graph is trained with a prediction loss and structural regularization:
 \begin{equation}
-\mathcal{L}=\mathcal{L}_{\mathrm{pred}}+\lambda_1\|A\|_1+\lambda_{\mathrm{dag}}\left(\mathrm{tr}\left(e^{A\odot A}\right)-K\right)^2.
+\mathcal{L}=\mathcal{L}_{\mathrm{pred}}+\lambda_1\|A\|_1+\lambda_{\mathrm{dag}}\big(\mathrm{tr}(e^{A\odot A})-K\big)^2-\lambda_v\,\mathrm{Var}(A).
 \end{equation}
-The sparsity term discourages dense all-to-all dependencies, and the NOTEARS-style term encourages an acyclic event-type graph. Together, they make the learned structure interpretable enough for downstream analysis.
+The L1 term discourages dense all-to-all dependencies; the NOTEARS-style term \cite{zheng2018notears} encourages an acyclic event-type graph (the matrix exponential is a 10-term truncated series); the small variance term discourages a degenerate uniform graph. Together they keep the learned structure interpretable for downstream analysis.
 
-\subsection{Stock Prediction Model}
+\subsection{Phase 3: Causal Propagation and Prediction}
+\label{sec:phase3}
 
-The evaluated stock prediction layer uses an interpretable tabular instantiation of the event framework. Each example contains a 32-event context, a 30-day OHLCV window, and a stock identifier. We construct
+The third module turns the event stream and the learned graph into a movement prediction. A causal propagation network (CPN) initializes a hidden impact state $h_i(0)$ per event from its type embedding, text embedding, and magnitude, then integrates it in continuous time along the lag-aware graph:
 \begin{equation}
-\mathbf{x}_i=[\mathbf{x}^{\mathrm{price}}_i\Vert \mathbf{x}^{\mathrm{event}}_i\Vert \mathbf{x}^{\mathrm{stock}}_i],
+\frac{dh_i}{dt}=f_\theta\!\Big(h_i,\;\sum_{j\in\mathrm{pa}(i)}A_{ji}\,g(t,\ell_{ji})\,h_j(t-\ell_{ji})\Big)-\lambda h_i,
 \end{equation}
-where $\mathbf{x}^{\mathrm{price}}_i$ includes recent returns, return volatility, log-volume statistics, and relative OHLC summaries. The event vector includes type counts, signed magnitude sums, absolute magnitude sums, the most recent event type, and global magnitude statistics. The stock vector is a one-hot ticker identity.
+solved with a Neural-ODE integrator \cite{chen2018node}, where the lag gate $g$ activates a parent's contribution near its learned delay and $\lambda$ provides decay. Event shocks are mapped to target stocks and aggregated, yielding event, trajectory, and stock hidden states.
 
-Given $\mathbf{x}_i$, the tabular classifier predicts class probabilities
+\textbf{Evaluated prediction layer.} For a transparent and reproducible probe, the final classifier is tabular. Each example contains a 32-event context, a 30-day OHLCV window, and a stock identifier, assembled into a feature vector
 \begin{equation}
-\hat{\mathbf{p}}_i=\mathrm{softmax}\left(\sum_{m=1}^{M}\eta h_m(\mathbf{x}_i)\right),
+\mathbf{x}_i=[\mathbf{x}^{\mathrm{price}}_i\Vert\mathbf{x}^{\mathrm{event}}_i\Vert\mathbf{x}^{\mathrm{stock}}_i],
 \end{equation}
-where $h_m$ is the $m$-th tree and $\eta$ is the learning rate. We report two configurations of this prediction layer: price plus event features, and price plus event features with stock identity.
+where $\mathbf{x}^{\mathrm{price}}$ covers recent returns, return volatility, log-volume statistics, and relative OHLC summaries; $\mathbf{x}^{\mathrm{event}}$ covers per-type event counts, signed and absolute magnitude sums, the most recent event type, and global magnitude statistics; and $\mathbf{x}^{\mathrm{stock}}$ is a one-hot ticker identity. A histogram gradient-boosting classifier predicts class probabilities. We then form a \emph{causal ensemble} that augments these tabular features with CPN-derived causal representations and combines several gradient-boosted heads with a meta-model, reported alongside the plain tabular baseline in Section~\ref{sec:results}.
 
 \section{Experimental Setup}
 
-\textbf{Dataset.} We use a 5\% subset of FNSPID \cite{dong2024fnspid}, a financial news and price dataset aligned over time. The event extraction stage produces 10{,}901 structured event records. The downstream stock prediction study contains 9{,}566 ticker-aligned examples over 22 stocks spanning 2010--2023.
+\textbf{Data.} The extraction stage labels roughly 50{,}000 news articles from the 5\% FNSPID subset and, after removing duplicates and non-events, yields 10{,}901 structured event records. The downstream study contains 9{,}566 ticker-aligned examples over 22 stocks spanning 2010--2023. Each example uses 32 historical news events and a 30-day OHLCV window. The class distribution is 39.4\% UP, 43.3\% DOWN, and 17.3\% FLAT.
 
-\textbf{Prediction protocol.} Each prediction example uses 32 historical news events and a 30-day OHLCV window. Labels are defined by next-day return using $\delta=0.005$, yielding UP, DOWN, and FLAT classes. The class distribution is 39.4\% UP, 43.3\% DOWN, and 17.3\% FLAT.
+\textbf{Protocol.} We report macro-F1 and accuracy. Macro-F1 is emphasized because FLAT is the minority class and accuracy can hide imbalance. We use two splits with $70/15/15$ ratios. \emph{Stratified random} splitting measures whether the representation contains reusable information; \emph{chronological} splitting orders examples by time and measures forward-time predictability under distribution shift. Embeddings are precomputed once and cached; the tabular and ensemble heads use a fixed seed, so single-run results should be read as preliminary point estimates.
 
-\textbf{Evaluation.} We report macro-F1 and accuracy. Macro-F1 is emphasized because the FLAT class is less frequent and because accuracy can hide class imbalance. We use both stratified random splitting and chronological splitting. Stratified evaluation measures whether the representation contains reusable information; chronological evaluation measures forward-time predictability under distribution shift.
+\section{Results and Analysis}
+\label{sec:results}
 
-\section{Data Analysis}
+\subsection{Phase 1: Event Stream Characterization}
+
+Phase 1 produced 10{,}901 structured events. Table~\ref{tab:event_dist} shows a highly long-tailed type distribution: earnings-related events dominate, and the top three classes account for 55.3\% of records, so any event-type model must avoid collapsing onto frequent corporate classes. Table~\ref{tab:impact} reports impact-profile coverage. Polarity, scope, novelty, and credibility are available for about 85\% of events, supporting richer modeling than binary sentiment. Surprise is sparse (6.6\%): explicit expectation gaps occur mainly in high-information events such as earnings and macro releases, so surprise is best treated as a sparse high-value attribute rather than a universal feature. A manual audit of 50 earnings- and macro-related samples found 84\% event-type agreement, 78\% action agreement, and 91\% polarity agreement, indicating that the silver labels are usable while leaving room for a larger gold set.
 
 \begin{table}[t]
 \caption{Top event-type frequencies from 10{,}901 structured events.}
@@ -204,10 +247,10 @@ Event type & Count & Share \\
 \midrule
 C1: earnings-related & 3{,}187 & 29.2\% \\
 NONE or weak event & 1{,}660 & 15.2\% \\
-C6: split or capital action & 1{,}186 & 10.9\% \\
+C6: split / capital action & 1{,}186 & 10.9\% \\
 C4: product or operation & 727 & 6.7\% \\
-G1: geopolitical or policy shock & 690 & 6.3\% \\
-M2: macro growth/employment & 532 & 4.9\% \\
+G1: geopolitical / policy shock & 690 & 6.3\% \\
+M2: economic data release & 532 & 4.9\% \\
 M4: monetary signal & 501 & 4.6\% \\
 C2: merger or acquisition & 477 & 4.4\% \\
 K1: analyst rating & 403 & 3.7\% \\
@@ -216,10 +259,8 @@ M1: interest rate & 321 & 2.9\% \\
 \end{tabular}
 \end{table}
 
-The event distribution is highly long-tailed. Earnings-related events dominate the extracted labels, while macro, analyst, and geopolitical events form smaller but semantically important groups. This distribution suggests that stock prediction models must avoid collapsing onto the most frequent corporate classes and should use class-aware training or evaluation when event-type prediction is a target.
-
 \begin{table}[t]
-\caption{Impact-profile coverage shows which auxiliary event attributes are consistently recoverable.}
+\caption{Impact-profile coverage over 10{,}901 events.}
 \label{tab:impact}
 \centering
 \small
@@ -236,55 +277,94 @@ Credibility & high for major outlets; low for weak sources & 84.8\% \\
 \end{tabular}
 \end{table}
 
-The impact-profile analysis reveals two important properties. First, polarity, scope, novelty, and credibility are available for most extracted events, so the representation can support richer modeling than binary sentiment. Second, surprise is sparse: only 6.6\% of records contain a recoverable numeric surprise signal. This sparsity is not a defect by itself, because explicit expectation gaps mainly occur in high-information events such as earnings reports and macro releases; however, it means that surprise should be modeled as a sparse high-value attribute rather than as a universal feature.
+\subsection{Phase 3: Prediction Results}
 
-\section{Prediction Results}
-
-\begin{table}[t]
-\caption{Prediction performance under stratified and chronological splits. Chronological evaluation is much harder and exposes temporal distribution shift.}
-\label{tab:main_results}
-\centering
-\small
-\begin{tabular}{lccc}
-\toprule
-Split & Macro-F1 & Accuracy & FLAT recall \\
-\midrule
-Stratified random & 0.6929 & 0.7281 & 44.8\% \\
-Chronological & 0.3366 & 0.3969 & 10.0\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Table~\ref{tab:main_results} shows a sharp gap between random-split and chronological performance. Under stratified random evaluation, the full combined model achieves 0.6929 macro-F1 and balanced UP/DOWN performance, indicating that the combined price-event representation captures meaningful regularities. Under chronological evaluation, macro-F1 falls to 0.3366. The drop shows that temporal distribution shift, market regime changes, and the short one-day prediction horizon dominate the forward-time setting.
+Table~\ref{tab:ablation} reports the stratified-split ablation. Three patterns stand out.
 
 \begin{table}[t]
-\caption{Reported stratified random results for combined-feature models.}
+\caption{Stratified-split ablation on the test set (9{,}566 examples; 6{,}695 train / 1{,}433 val / 1{,}438 test). Best macro-F1 in bold.}
 \label{tab:ablation}
 \centering
 \small
-\begin{tabular}{lcc}
+\begin{tabular}{lrcc}
 \toprule
-Feature set & Dim. & Macro-F1 \\
+Configuration & Dim. & Macro-F1 & Accuracy \\
 \midrule
-Price + events & 110 & 0.684 \\
-Price + events + stock ID & 132 & 0.693 \\
+Tabular: news+price+stock & 132 & 0.6929 & 0.7281 \\
+ODE hidden states only & 6596 & 0.5519 & 0.6140 \\
+ODE + news features & 1476 & 0.5953 & 0.6599 \\
+ODE fused representation & 260 & 0.6229 & 0.6850 \\
+Causal ensemble v1 (single head) & 232 & 0.6762 & 0.7086 \\
+Causal ensemble v1 (hierarchical) & 232 & 0.6825 & 0.7045 \\
+Causal ensemble v1 (meta-ensemble) & 232 & \textbf{0.7089} & 0.7344 \\
+Causal ensemble v2 (meta-ensemble) & 281 & 0.7045 & 0.7323 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:ablation} reports only the combined-feature settings used for the final paper. Adding stock identity to the price-and-event representation improves macro-F1 from 0.684 to 0.693, suggesting that ticker-specific volatility and reaction patterns remain useful even after recent price history and event statistics are included. These results should be read as evidence that the combined representation is learnable under a random split, not as evidence of robust forward-time predictability.
+\textbf{(R1) Raw ODE representations underperform engineered features.} The 6596-dimensional ODE hidden states alone reach only 0.552 macro-F1, well below the 132-dimensional tabular baseline at 0.693. With roughly 6{,}700 training examples, a very high-dimensional learned representation is not sample-efficient; the compact engineered features generalize better.
 
-\section{Discussion and Limitations}
+\textbf{(R2) The causal representation is complementary, not a replacement.} Distilling the ODE output and fusing it with price and news features changes the picture. The meta-ensemble over price, news, and 232-dimensional causal/ODE-derived features reaches 0.709 macro-F1 and 0.734 accuracy, improving on the tabular baseline by 1.6 macro-F1 points. The gain appears on both validation and test and across the v1/v2 feature variants, but it is modest and obtained with a single seed; multi-seed confidence intervals are needed before claiming it as robust.
 
-The main empirical lesson is that event structure is informative but not enough by itself to solve forward-time stock prediction. Auxiliary studies not reported as main results indicate that simple event summaries have limited marginal value once recent price history is already available, which is consistent with the strong market signal embedded in OHLCV features. The chronological results further show that the combined representation does not transfer cleanly across time. This distinction is essential: random-split performance can overstate practical forecasting ability when examples from similar market regimes appear in both training and test sets.
+\textbf{(R3) The fusion strategy matters.} On identical 232-dimensional features, a single gradient-boosted head scores 0.676, a hierarchical head 0.683, and the meta-ensemble 0.709. The causal features carry signal, but only the ensemble extracts it without underperforming the plain tabular baseline.
 
-The causal graph should also be interpreted carefully. The proposed matrix $A$ captures directed temporal predictive dependence under time-ordering, sparsity, and acyclicity assumptions. It is useful for building interpretable event chains, but it does not establish intervention-level causal effects. This limitation is particularly important in financial markets, where unobserved macro variables, policy decisions, and strategic investor behavior can create confounding.
+\begin{table}[t]
+\caption{Stratified vs.\ chronological evaluation. Three-class random macro-F1 is $\approx$0.33.}
+\label{tab:split}
+\centering
+\small
+\begin{tabular}{llcc}
+\toprule
+Model & Split & Macro-F1 & Accuracy \\
+\midrule
+Tabular news+price+stock & Stratified & 0.6929 & 0.7281 \\
+Tabular news+price+stock & Chronological & 0.3366 & 0.3969 \\
+ODE hidden states & Stratified & 0.5519 & 0.6140 \\
+ODE hidden states & Chronological & 0.3142 & 0.4164 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-The current prediction layer is intentionally conservative. It provides a transparent probe of the value of price and event features, but the chronological split shows that these features do not yet solve forward-time generalization. Future work should therefore focus on improving temporal robustness while keeping the evaluation protocol strictly chronological.
+\textbf{(R4) Chronological evaluation collapses to near-random.} Table~\ref{tab:split} shows the central limitation. Under chronological splitting, every model falls to roughly 0.31--0.34 macro-F1, near the three-class random baseline. The collapse is structural rather than a tuning artifact: on the chronological test set the predicted class counts degenerate toward the majority classes, and the ODE model predicts the FLAT class only 30 times against 260 true FLAT cases. Because FNSPID spans 2010--2023 -- multiple market regimes -- a model trained on early years does not transfer to later ones. This is a property of forward-time stock prediction and a market-efficiency effect, not a defect of the news data or the extraction pipeline.
+
+\subsection{Explainability and Intermediate Process}
+
+The pipeline is interpretable at each stage. Phase 1 yields auditable structured records and the attribute-coverage profile in Table~\ref{tab:impact}. Phase 2 yields a sparse event-type graph $A$ and lag matrix $T_{\mathrm{lag}}$ whose top-weighted directed edges can be read as candidate event chains with explicit delays. Phase 3 exposes feature importances from the gradient-boosted classifier: under the stratified split, recent-return and volatility features dominate, followed by stock identity, with event-count and signed-magnitude features contributing a smaller but non-zero share. This ordering is consistent with R1--R2: price history is the strongest single signal, and structured news adds a modest complementary increment rather than replacing it.
+
+\section{Comparison and Discussion}
+\label{sec:comparison}
+
+\subsection{Comparison with NeurIPS 2024 CausalStock}
+
+The NeurIPS 2024 CausalStock \cite{li2024causalstock} reports that news consistently helps stock movement prediction. Our causal ensemble also benefits from news, but by a smaller margin, and our chronological results are weaker. Table~\ref{tab:compare} frames the differences along data, method, and protocol axes; we read the gap as an explainable consequence of these axes rather than a contradiction.
+
+\begin{table}[t]
+\caption{Interpretable comparison with NeurIPS 2024 CausalStock.}
+\label{tab:compare}
+\centering
+\small
+\begin{tabular}{p{0.26\linewidth}p{0.31\linewidth}p{0.31\linewidth}}
+\toprule
+Axis & This work & CausalStock \cite{li2024causalstock} \\
+\midrule
+Causality level & Event-type graph (20 nodes) & Stock-level graph \\
+Propagation & Event$\rightarrow$stock, two layers & Within stock universe \\
+Prediction task & 3-class with $\pm0.5\%$ FLAT zone & Binary up/down \\
+Data scale & 5\% FNSPID subset, 22 stocks & Larger multi-dataset \\
+Inference style & Tabular ensemble on aggregated event statistics & End-to-end functional causal model \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Data.} We use a 5\% FNSPID subset with 9{,}566 examples and 22 stocks. At this scale the ODE and causal modules are sample-starved, which is visible in R1. \textbf{Task.} We predict three classes with a $\pm0.5\%$ dead zone; the FLAT class is the hard minority and is exactly what collapses chronologically, whereas a binary up/down task removes this difficulty. \textbf{Method.} Their end-to-end functional causal model couples news with a price-derived causal backbone inside the predictor, while our evaluated layer is a deliberately transparent tabular ensemble over aggregated event statistics, which is interpretable but lossier. \textbf{Protocol.} Our directly comparable number is the chronological one; a stratified random split mixes market regimes across train and test and inflates apparent performance. The two formulations remain complementary: event-type causality is transferable across companies, stock-level causality is specific to a fixed universe.
+
+\subsection{Limitations and Future Work}
+
+Four limitations bound the current results. (i) \emph{Surprise sparsity}: only 6.6\% of events carry a recoverable numeric surprise; price-reaction pseudo-labels and a text-level surprise classifier could raise coverage. (ii) \emph{Single-label extraction}: one article often spans several events, and a top-$k$ multi-label output would preserve compositional structure. (iii) \emph{Temporal generalization}: the chronological collapse is the dominant open problem; regime-aware training and walk-forward validation are the natural next steps. (iv) \emph{Statistical strength}: the 1.6-point ensemble gain is a single-seed point estimate and needs multi-seed confidence intervals, alongside MCC and information-coefficient metrics, before it can be claimed as robust.
 
 \section{Conclusion}
 
-This paper presents \textsc{CausalStock}, an event-structured framework for news-driven stock prediction. It replaces sentiment-only news representations with financial event quadruples, learns lag-aware directed dependencies between event types, and connects those structures to stock movement prediction. Empirically, the extracted event stream contains meaningful signal, but the large gap between stratified and chronological evaluation shows that genuine forward prediction remains difficult. The resulting contribution is a clearer problem formulation, a mathematically specified event-causal model, and an honest data analysis that identifies where structured news helps and where stronger temporal generalization is still needed.
+This paper presents \textsc{CausalStock}, an event-structured framework for news-driven stock prediction whose schema is grounded in an exploratory analysis of the data: measured headline duplication, provenance missingness, and broad article scope directly motivate the novelty, credibility, and scope attributes. The pipeline converts roughly 50{,}000 articles into 10{,}901 structured events, learns a lag-aware event-type dependency graph, and propagates event shocks through a causal network. Empirically, the causal ensemble improves on a strong tabular baseline (0.709 vs.\ 0.693 macro-F1) under stratified evaluation, showing that structured news carries complementary signal. Under chronological evaluation, all models fall to near-random, isolating temporal distribution shift as the central challenge. The contribution is a data-grounded problem formulation, a mathematically specified event-causal model, and an honest analysis that separates information content from genuine forward-time predictability.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
