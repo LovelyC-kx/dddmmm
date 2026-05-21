@@ -1,0 +1,37 @@
+{
+  "args": {
+    "embeddings": "D:\\Bertram Rowen\\texts\\code\\CS173\\CS173_proj\\DirectionA\\data\\embeddings\\emb.pt",
+    "meta": "D:\\Bertram Rowen\\texts\\code\\CS173\\CS173_proj\\DirectionA\\data\\embeddings\\meta.json",
+    "price_dir": "D:\\Bertram Rowen\\texts\\code\\CS173\\CS173_proj\\DirectionA\\data\\sp100_prices",
+    "output_dir": "data\\stage2_repaired",
+    "epochs": 12,
+    "batch_size": 64,
+    "lr": 3e-05,
+    "weight_decay": 0.02,
+    "seq_len": 32,
+    "label_threshold": 0.0,
+    "train_ratio": 0.8,
+    "reg_weight": 0.2,
+    "seed": 42,
+    "device": "cpu"
+  },
+  "n_examples": 9527,
+  "n_train": 7621,
+  "n_val": 1906,
+  "best_epoch": 2,
+  "best_val_accuracy": 0.5362014690451207,
+  "best_metrics": {
+    "loss": 0.8243376567005986,
+    "cls_loss": 0.6963348343014591,
+    "reg_loss": 0.6400139927864075,
+    "accuracy": 0.5362014690451207
+  },
+  "graph": {
+    "causal_mean": 0.26306796073913574,
+    "causal_std": 0.04730919376015663,
+    "causal_offdiag_mean": 0.26271334290504456,
+    "causal_offdiag_std": 0.04788307473063469,
+    "causal_min": 0.12050078064203262,
+    "causal_max": 0.4004674553871155
+  }
+}
